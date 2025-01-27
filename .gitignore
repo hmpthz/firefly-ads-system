@@ -1,0 +1,49 @@
+node_modules
+
+# build
+dist
+dist-ssr
+build
+.next
+*.tsbuildinfo
+.rollup.cache
+
+# env
+.env
+*.local
+
+# vercel
+.vercel
+
+# for frontend
+twitter/prisma/migrations
+twitter/prisma/pglite
+
+# for backend
+
+# testing
+coverage
+
+# misc
+/playground
+.temp
+*.pem
+next-env.d.ts
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

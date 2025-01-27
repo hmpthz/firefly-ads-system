@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    // Rollup requires esnext as well
+    "target": "ESNext",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "strict": true,
+    "useDefineForClassFields": true,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "lib": [
+      "ESNext"
+    ],
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+}
