@@ -8,11 +8,9 @@
  * So only the second interceptor catch the error from first one
  */
 import axios from 'axios';
-import { useEffect, useState } from 'react';
-import { getRootStore } from '@/store/store';
-import type { TokenRefresh_Response } from '@/store/userSlice';
+import { store } from '@/store';
 import { getErrorMessage, isReadableError } from './error';
-import { useOutletContext } from 'react-router-dom';
+import type { TokenRefresh_Response } from '@shared/user';
 
 export const publicApi = axios.create();
 export const privateApi = axios.create({
@@ -29,11 +27,10 @@ publicApi.interceptors.response.use(
 );
 
 const tokenRefresher = new (class TokenRefresher {
-  protected _store = getRootStore();
   protected _authenticating?: Promise<string>;
 
   async getAccessToken() {
-    const auth = this._store.getState().user.auth;
+    const auth = store.getState().user.auth;
     if (auth && Date.now() < auth.expiredAt) {
       return auth.accessToken;
     }
@@ -47,7 +44,7 @@ const tokenRefresher = new (class TokenRefresher {
 
   /** throw `'refresh_token not found'` if cookie does not exist */
   async refresh() {
-    const { dispatch, userActions } = this._store;
+    const { dispatch, userActions } = store;
 
     try {
       if (this.checkCookieValue('has_refresh_token') == undefined) {
@@ -69,7 +66,7 @@ const tokenRefresher = new (class TokenRefresher {
   }
 
   resetUserStore() {
-    const { dispatch, userActions } = this._store;
+    const { dispatch, userActions } = store;
     dispatch(userActions.setTokenRefresh(undefined));
   }
 
@@ -81,24 +78,12 @@ const tokenRefresher = new (class TokenRefresher {
   }
 })();
 
-export function useTokenFirstRefresh() {
-  const [tokenFirstRefresh, setToeknFirstFetch] = useState(true);
-
-  useEffect(() => {
-    tokenRefresher
-      .getAccessToken()
-      .catch((errMsg) => {
-        if (errMsg == 'refresh_token not found') console.log(errMsg);
-        else console.error(errMsg);
-      })
-      .finally(() => setToeknFirstFetch(false));
-  }, []);
-
-  return { tokenFirstRefresh };
-}
-
-export function useFirstRefreshontext() {
-  return useOutletContext<ReturnType<typeof useTokenFirstRefresh>>();
+export function tokenFirstRefresh() {
+  return tokenRefresher.getAccessToken().catch((errMsg) => {
+    if (errMsg == 'refresh_token not found') console.log(errMsg);
+    else console.error(errMsg);
+    return null;
+  });
 }
 
 privateApi.interceptors.request.use(async (req) => {

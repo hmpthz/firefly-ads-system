@@ -1,0 +1,54 @@
+{
+  "configurations": [
+    {
+      "name": "Node: Current File",
+      "type": "node",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${fileDirname}",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "TSX Node: Current File",
+      "type": "node",
+      "request": "launch",
+      "program": "${file}",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "tsx"],
+      "cwd": "${fileDirname}",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Browser: Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/web",
+      "userDataDir": "C:/Workspace/.vscode/chrome-debug-profile",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "Browser: Edge",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/web",
+      "userDataDir": "C:/Workspace/.vscode/edge-debug-profile",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "Backend: run dev",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-F", "api", "dev"],
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

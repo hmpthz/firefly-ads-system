@@ -1,11 +1,12 @@
 {
   "extends": "../tsconfig.base.json",
-  "include": ["src"],
+  "include": ["src", "../shared"],
   "exclude": ["node_modules"],
   "compilerOptions": {
     "incremental": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["../shared/*"]
     },
     "outDir": "./build",
     "types": []

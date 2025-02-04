@@ -16,10 +16,9 @@ build
 .vercel
 
 # for frontend
-twitter/prisma/migrations
-twitter/prisma/pglite
 
 # for backend
+api/dev-db/.db*
 
 # testing
 coverage

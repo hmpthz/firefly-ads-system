@@ -1,11 +1,12 @@
 {
   "extends": "../tsconfig.base.node.json",
-  "include": ["src"],
+  "include": ["src", "dev-db", "../shared"],
   "exclude": ["node_modules"],
   "compilerOptions": {
     "incremental": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["../shared/*"]
     },
     // Must be the same as rollup output dir
     "outDir": "../api",

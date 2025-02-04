@@ -3,24 +3,10 @@ import {
   type CaseReducer,
   type PayloadAction,
 } from '@reduxjs/toolkit';
+import type { TokenRefresh_Response, UserProfile } from '@shared/user';
 import { persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
-export interface UserProfile {
-  id: string;
-  email: string;
-  username: string;
-  avatar: string;
-}
-export interface UserAuth {
-  accessToken: string;
-  expiredAt: number;
-  role: string;
-}
-export interface TokenRefresh_Response {
-  auth: UserAuth;
-  profile: UserProfile;
-}
 interface UserStore extends Partial<TokenRefresh_Response> {}
 const initialState: UserStore = {};
 
@@ -53,7 +39,7 @@ const userSlice = createSlice({
     clearAll,
   },
 });
-export const userReducers = persistReducer(
+export const userReducer = persistReducer(
   {
     key: 'user',
     storage,

@@ -1,20 +1,47 @@
 import { Outlet, type RouteObject } from 'react-router-dom';
-import { StoreProvider } from './store/store';
-import { useTokenFirstRefresh } from './utils/axios';
+import { tokenFirstRefresh } from './utils/axios';
+import { theme } from './assets/theme';
+import { CssBaseline, ThemeProvider } from '@mui/material';
+import { indexRoute } from './pages';
+import { signInRoute } from './pages/signin';
+import { ErrorsSnackbar } from './components/ErrorsSnackbar';
+import { routeGuard } from './components/RouteGuard';
+import { createOrgRoute } from './pages/signin/create-org';
+import { orgRoute } from './pages/org';
+import { sysRoute } from './pages/sys';
 
-export const appRoute: RouteObject[] = [
-  {
-    element: <App />,
-    children: [],
-  },
-];
+export const appRoute: RouteObject = {
+  id: 'app',
+  // 启动时尝试获取access token
+  loader: tokenFirstRefresh,
+  element: <App />,
+  children: [
+    indexRoute,
+    routeGuard({ redirect: '/', children: [signInRoute] }),
+    routeGuard({
+      roles: ['org.admin', 'org.operator', 'sys.xiaoer'],
+      redirect: '/',
+      children: [createOrgRoute],
+    }),
+    routeGuard({
+      roles: ['org.admin', 'org.operator'],
+      redirect: '/org',
+      children: [orgRoute],
+    }),
+    routeGuard({
+      roles: ['sys.xiaoer'],
+      redirect: '/sys',
+      children: [sysRoute],
+    }),
+  ],
+};
 
 function App() {
-  const firstRefreshContext = useTokenFirstRefresh();
-
   return (
-    <StoreProvider>
-      <Outlet context={firstRefreshContext} />
-    </StoreProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Outlet />
+      <ErrorsSnackbar />
+    </ThemeProvider>
   );
 }
