@@ -1,9 +1,13 @@
 import {
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
+  Radio,
+  RadioGroup,
   Select,
   TextField,
+  type RadioGroupProps,
   type TextFieldProps,
 } from '@mui/material';
 import {
@@ -59,5 +63,29 @@ export const RHFSelect = <T extends FieldValues, P extends Path<T>>({
         </Select>
       )}
     />
+  </FormControl>
+);
+
+export const RadioGroupControl = ({
+  disabled,
+  labels,
+  ...props
+}: RadioGroupProps & {
+  disabled?: boolean;
+  labels: [string, string][] | Record<string, string>;
+}) => (
+  <FormControl disabled={disabled}>
+    <RadioGroup {...props}>
+      {(Array.isArray(labels) ? labels : Object.entries(labels)).map(
+        ([value, label]) => (
+          <FormControlLabel
+            key={value}
+            value={value}
+            label={label}
+            control={<Radio />}
+          />
+        )
+      )}
+    </RadioGroup>
   </FormControl>
 );

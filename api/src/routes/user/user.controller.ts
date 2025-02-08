@@ -2,7 +2,7 @@ import bcryptjs from 'bcryptjs';
 import { authHandler } from '@/middlewares/auth.middleware.js';
 import { userModel, type User } from '@/models/user.model.js';
 import { HandledError } from '@/utils/errors.js';
-import type { UpdateUserFormData, UserProfile } from '@shared/user.js';
+import type { UpdateUserFormData, User_Client } from '@shared/user.js';
 import mongoose from 'mongoose';
 import {
   editUserAuthHandler,
@@ -41,11 +41,14 @@ export const updateUser: EditUserAuthHandler<UpdateUserFormData>[] = [
     if (!user) {
       return next(HandledError.list['param|wrong_userid|404']);
     }
-    const resBody: UserProfile = {
+    const resBody: User_Client = {
       id: req.params.id,
       email: user.email,
       username: user.username,
       avatar: user.avatar,
+      orgId: user.org?.toString(),
+      createdAt: user.createdAt.toISOString(),
+      updatedAt: user.updatedAt.toISOString(),
     };
     res.json(resBody);
   },

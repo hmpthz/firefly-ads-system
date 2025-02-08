@@ -1,12 +1,12 @@
-import type { AssetTicket_Server, Attachment } from '@shared/asset.js';
-import type { Organization_Server } from '@shared/org.js';
+import type { AssetTicket_Server } from '@shared/asset.js';
 import mongoose from 'mongoose';
+import type { OrganizationDoc } from './org.model.js';
 
 export interface AssetTicket extends AssetTicket_Server {
   org: mongoose.Types.ObjectId;
 }
 export interface AssetTicket_Populated {
-  org: Organization_Server;
+  org: OrganizationDoc;
 }
 
 export const attachmentSchemaDef = {
@@ -26,6 +26,8 @@ const assetTicketSchema = new mongoose.Schema<AssetTicket>(
       type: String,
       required: true,
     },
+    // @ts-expect-error
+    org: { type: mongoose.Types.ObjectId, ref: 'Organization', required: true },
     ...attachmentSchemaDef,
   },
   { timestamps: true }

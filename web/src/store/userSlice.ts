@@ -3,14 +3,14 @@ import {
   type CaseReducer,
   type PayloadAction,
 } from '@reduxjs/toolkit';
-import type { TokenRefresh_Response, UserProfile } from '@shared/user';
+import type { TokenRefresh_Response, User_Client } from '@shared/user';
 import { persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
 interface UserStore extends Partial<TokenRefresh_Response> {}
 const initialState: UserStore = {};
 
-const setProfile: CaseReducer<UserStore, PayloadAction<UserProfile>> = (
+const setProfile: CaseReducer<UserStore, PayloadAction<User_Client>> = (
   state,
   action
 ) => {

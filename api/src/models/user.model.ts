@@ -1,6 +1,6 @@
 import type { User_Server } from '@shared/user.js';
 import mongoose from 'mongoose';
-import type { Organization } from './org.model.js';
+import type { OrganizationDoc } from './org.model.js';
 
 export interface Session {
   /** Can be seen as a session id */
@@ -24,7 +24,7 @@ export interface User extends User_Server {
   session?: Session;
 }
 export interface User_Populated {
-  org?: Organization;
+  org?: OrganizationDoc;
 }
 const userSchema = new mongoose.Schema<User>(
   {

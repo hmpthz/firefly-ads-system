@@ -18,6 +18,7 @@ export interface OrganizationProfile {
 export interface Organization_Client
   extends OrganizationProfile,
     Timestamp_Client {
+  _id: string;
   /** 当前（最新）的资质工单 */
   credential?: CredentialTicket & Timestamp_Client;
 }
@@ -29,9 +30,12 @@ interface CredentialTicket extends Ticket {
 export interface CredentialTicket_Client
   extends CredentialTicket,
     Timestamp_Client {
+  _id: string;
   org: Pick<OrganizationProfile, 'id' | 'name'>;
 }
 export type CredentialTicket_Server = CredentialTicket & Timestamp_Server;
 
 export type CreateOrgFormData = Omit<OrganizationProfile, 'id'> &
   Pick<User_Server, 'role'>;
+
+export type UpdateOrgFormData = Partial<Omit<OrganizationProfile, 'id'>>;

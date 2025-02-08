@@ -4,11 +4,7 @@ import {
   Alert,
   Button,
   CircularProgress,
-  FormControl,
-  FormControlLabel,
   ToggleButton as MUIToggleButton,
-  Radio,
-  RadioGroup,
   Stack,
   styled,
   ToggleButtonGroup,
@@ -21,27 +17,49 @@ import {
   type SignInFormData,
   type SignUpFormData,
 } from '@shared/user';
-import { RHFSelect, RHFTextField } from '@/components/RHFInputs';
+import {
+  RadioGroupControl,
+  RHFSelect,
+  RHFTextField,
+} from '@/components/RHFInputs';
 import { publicApi } from '@/utils/axios';
 import { useStoreActions } from '@/store';
-import { useRequestStates, type RequestStates } from '@/hooks/useRequestStates';
+import { useCustomMutation, type CustomMutation } from '@/hooks/useCustomQuery';
 
 export const signInRoute: RouteObject = {
   path: '/signin',
   element: <SignInLayout />,
-  children: [{ index: true, element: <SignIn /> }],
+  children: [{ index: true, element: <Page /> }],
 };
 
 const ToggleButton = styled(MUIToggleButton)(() => ({ flex: 1 }));
 
-function SignIn() {
+function Page() {
+  const navigate = useNavigate();
+  const { dispatch, userActions } = useStoreActions();
   const [mode, setMode] = useState('signup');
   const handleModeChange = (_: unknown, val: string) => {
     if (val) {
       setMode(val);
     }
   };
-  const req = useRequestStates({ loading: false });
+
+  const signinMutation = useCustomMutation((data: SignInFormData) =>
+    publicApi
+      .post<TokenRefresh_Response>('/api/auth/signin', data)
+      .then((res) => {
+        dispatch(userActions.setTokenRefresh(res.data));
+        navigate('/');
+      })
+  );
+  const signupMutaton = useCustomMutation((data: SignUpFormData) =>
+    publicApi
+      .post<TokenRefresh_Response>('/api/auth/signup', data)
+      .then((res) => {
+        dispatch(userActions.setTokenRefresh(res.data));
+        navigate('/');
+      })
+  );
 
   return (
     <>
@@ -51,33 +69,25 @@ function SignIn() {
         exclusive
         onChange={handleModeChange}
         sx={{ width: 1 }}
-        disabled={req.loading.b}
+        disabled={signinMutation.isPending || signupMutaton.isPending}
       >
         <ToggleButton value="signin">登录</ToggleButton>
         <ToggleButton value="signup">注册</ToggleButton>
       </ToggleButtonGroup>
-      {mode == 'signin' ? <SignInForm {...req} /> : <SignUpForm {...req} />}
+      {mode == 'signin' ? (
+        <SignInForm {...signinMutation} />
+      ) : (
+        <SignUpForm {...signupMutaton} />
+      )}
     </>
   );
 }
 
-function SignInForm({ loading, success, error }: RequestStates) {
-  const navigate = useNavigate();
-  const { dispatch, userActions } = useStoreActions();
+function SignInForm({ mutate, isPending }: CustomMutation<SignInFormData>) {
   const { control, handleSubmit } = useForm<SignInFormData>({
     defaultValues: { email: '', password: '' },
   });
-  const onSubmit = handleSubmit((data) => {
-    loading.start(true);
-    publicApi
-      .post<TokenRefresh_Response>('/api/auth/signin', data)
-      .then((res) => {
-        dispatch(userActions.setTokenRefresh(res.data));
-        success.receive();
-        navigate('/');
-      })
-      .catch((msg) => error.receive(msg));
-  });
+  const onSubmit = handleSubmit((data) => mutate(data));
 
   return (
     <Stack component="form" onSubmit={onSubmit} spacing={3} sx={{ mt: 3 }}>
@@ -99,19 +109,17 @@ function SignInForm({ loading, success, error }: RequestStates) {
         label="密码"
         required
       />
-      <Button variant="contained" type="submit" disabled={loading.b}>
+      <Button variant="contained" type="submit" disabled={isPending}>
         登录
       </Button>
       <Typography align="center">
-        {loading.b ? <CircularProgress /> : null}
+        {isPending ? <CircularProgress /> : null}
       </Typography>
     </Stack>
   );
 }
 
-function SignUpForm({ loading, success, error }: RequestStates) {
-  const navigate = useNavigate();
-  const { dispatch, userActions } = useStoreActions();
+function SignUpForm({ mutate, isPending }: CustomMutation<SignUpFormData>) {
   const [orgMode, setOrgMode] = useState('true');
   const { control, handleSubmit, setValue } = useForm<SignUpFormData>({
     defaultValues: {
@@ -132,17 +140,7 @@ function SignUpForm({ loading, success, error }: RequestStates) {
       setValue('role', 'sys.xiaoer');
     }
   };
-  const onSubmit = handleSubmit((data) => {
-    loading.start(true);
-    publicApi
-      .post<TokenRefresh_Response>('/api/auth/signup', data)
-      .then((res) => {
-        dispatch(userActions.setTokenRefresh(res.data));
-        success.receive();
-        navigate('/');
-      })
-      .catch((msg) => error.receive(msg));
-  });
+  const onSubmit = handleSubmit((data) => mutate(data));
 
   return (
     <Stack component="form" onSubmit={onSubmit} spacing={3} sx={{ mt: 3 }}>
@@ -172,27 +170,14 @@ function SignUpForm({ loading, success, error }: RequestStates) {
         label="密码"
         required
       />
-      <FormControl>
-        <RadioGroup
-          row
-          name="hasOrg"
-          value={orgMode}
-          onChange={handleOrgMode}
-          sx={{ gap: 1 }}
-        >
-          <FormControlLabel value="true" label="选择机构" control={<Radio />} />
-          <FormControlLabel
-            value="false"
-            label="暂不选择"
-            control={<Radio />}
-          />
-          <FormControlLabel
-            value="xiaoer"
-            label="小二（调试）"
-            control={<Radio />}
-          />
-        </RadioGroup>
-      </FormControl>
+      <RadioGroupControl
+        row
+        name="hasOrg"
+        value={orgMode}
+        onChange={handleOrgMode}
+        sx={{ gap: 1 }}
+        labels={{ true: '选择机构', false: '暂不选择', xiaoer: '小二（调试）' }}
+      />
       {orgMode == 'true' ? (
         <>
           <RHFTextField
@@ -217,11 +202,11 @@ function SignUpForm({ loading, success, error }: RequestStates) {
       ) : (
         <Alert severity="warning">小二平台审核员，仅供调试</Alert>
       )}
-      <Button variant="contained" type="submit" disabled={loading.b}>
+      <Button variant="contained" type="submit" disabled={isPending}>
         注册
       </Button>
       <Typography align="center">
-        {loading.b ? <CircularProgress /> : null}
+        {isPending ? <CircularProgress /> : null}
       </Typography>
     </Stack>
   );

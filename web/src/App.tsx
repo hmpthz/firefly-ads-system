@@ -1,7 +1,12 @@
 import { Outlet, type RouteObject } from 'react-router-dom';
 import { tokenFirstRefresh } from './utils/axios';
 import { theme } from './assets/theme';
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import {
+  CircularProgress,
+  CssBaseline,
+  ThemeProvider,
+  Typography,
+} from '@mui/material';
 import { indexRoute } from './pages';
 import { signInRoute } from './pages/signin';
 import { ErrorsSnackbar } from './components/ErrorsSnackbar';
@@ -9,11 +14,10 @@ import { routeGuard } from './components/RouteGuard';
 import { createOrgRoute } from './pages/signin/create-org';
 import { orgRoute } from './pages/org';
 import { sysRoute } from './pages/sys';
+import { useCustomQuery } from './hooks/useCustomQuery';
 
 export const appRoute: RouteObject = {
   id: 'app',
-  // 启动时尝试获取access token
-  loader: tokenFirstRefresh,
   element: <App />,
   children: [
     indexRoute,
@@ -25,22 +29,32 @@ export const appRoute: RouteObject = {
     }),
     routeGuard({
       roles: ['org.admin', 'org.operator'],
-      redirect: '/org',
+      redirect: '/',
+      condition: (profile) => profile?.orgId != undefined,
       children: [orgRoute],
     }),
     routeGuard({
       roles: ['sys.xiaoer'],
-      redirect: '/sys',
+      redirect: '/',
       children: [sysRoute],
     }),
   ],
 };
 
 function App() {
+  // 启动时尝试获取access token
+  const { isLoading } = useCustomQuery(['tokenFirstFetch'], tokenFirstRefresh);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Outlet />
+      {isLoading ? (
+        <Typography align="center">
+          <CircularProgress />
+        </Typography>
+      ) : (
+        <Outlet />
+      )}
       <ErrorsSnackbar />
     </ThemeProvider>
   );

@@ -4,25 +4,21 @@ import {
   Alert,
   Button,
   CircularProgress,
-  FormControl,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
   Stack,
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
 import { useStoreActions, useStoreSlice } from '@/store';
 import { useForm } from 'react-hook-form';
+import { type User_Client, type UpdateUserFormData } from '@shared/user';
 import {
-  type UserProfile,
-  type UpdateUserFormData,
-  type TokenRefresh_Response,
-} from '@shared/user';
-import { RHFSelect, RHFTextField } from '@/components/RHFInputs';
-import { useRequestStates, type RequestStates } from '@/hooks/useRequestStates';
+  RadioGroupControl,
+  RHFSelect,
+  RHFTextField,
+} from '@/components/RHFInputs';
 import { privateApi } from '@/utils/axios';
 import { type CreateOrgFormData } from '@shared/org';
+import { useCustomMutation, type CustomMutation } from '@/hooks/useCustomQuery';
 
 export const createOrgRoute: RouteObject = {
   path: '/signin/create-org',
@@ -31,9 +27,25 @@ export const createOrgRoute: RouteObject = {
 };
 
 function CreateOrg() {
+  const navigate = useNavigate();
+  const { dispatch, userActions } = useStoreActions();
   const { profile } = useStoreSlice('user');
   const [orgMode, setOrgMode] = useState('false');
-  const req = useRequestStates({ loading: false });
+
+  const updateUserMutation = useCustomMutation((data: UpdateUserFormData) =>
+    privateApi
+      .patch<User_Client>(`/api/user/action/${profile!.id}`, data)
+      .then((res) => {
+        dispatch(userActions.setProfile(res.data));
+        navigate('/');
+      })
+  );
+  const createOrgMutation = useCustomMutation((data: CreateOrgFormData) =>
+    privateApi.post<User_Client>(`/api/org/create`, data).then((res) => {
+      dispatch(userActions.setProfile(res.data));
+      navigate('/');
+    })
+  );
 
   return (
     <>
@@ -43,52 +55,36 @@ function CreateOrg() {
           {`${profile!.username} (${profile!.email})`}
         </Typography>
       </Typography>
-      <FormControl>
-        <RadioGroup
-          row
-          name="hasOrg"
-          value={orgMode}
-          onChange={(_, val) => setOrgMode(val)}
-          sx={{ gap: 1 }}
-        >
-          <FormControlLabel value="true" label="选择机构" control={<Radio />} />
-          <FormControlLabel
-            value="false"
-            label="新机构入驻"
-            control={<Radio />}
-          />
-        </RadioGroup>
-      </FormControl>
+      <RadioGroupControl
+        disabled={updateUserMutation.isPending || createOrgMutation.isPending}
+        row
+        name="hasOrg"
+        value={orgMode}
+        onChange={(_, val) => setOrgMode(val)}
+        sx={{ gap: 1 }}
+        labels={{ true: '选择机构', false: '新机构入驻' }}
+      />
       {orgMode == 'true' ? (
-        <InputOrgForm {...req} />
+        <InputOrgForm {...updateUserMutation} />
       ) : (
-        <CreateOrgForm {...req} />
+        <CreateOrgForm {...createOrgMutation} />
       )}
     </>
   );
 }
 
-function InputOrgForm({ loading, success, error }: RequestStates) {
-  const navigate = useNavigate();
-  const { profile } = useStoreSlice('user');
-  const { dispatch, userActions } = useStoreActions();
+function InputOrgForm({
+  mutate,
+  isPending,
+}: CustomMutation<UpdateUserFormData>) {
   const { control, handleSubmit } = useForm<UpdateUserFormData>({
     defaultValues: {
       role: 'org.operator',
       orgName: '',
     },
   });
-  const onSubmit = handleSubmit((data) => {
-    loading.start(true);
-    privateApi
-      .patch<UserProfile>(`/api/user/action/${profile!.id}`, data)
-      .then((res) => {
-        dispatch(userActions.setProfile(res.data));
-        success.receive();
-        navigate('/');
-      })
-      .catch((msg) => error.receive(msg));
-  });
+  const onSubmit = handleSubmit((data) => mutate(data));
+
   return (
     <Stack component="form" onSubmit={onSubmit} spacing={3} sx={{ mt: 2 }}>
       <RHFTextField
@@ -107,19 +103,20 @@ function InputOrgForm({ loading, success, error }: RequestStates) {
         labelText="选择角色权限（调试）"
         items={{ 管理员: 'org.admin', 运营: 'org.operator' }}
       />
-      <Button variant="contained" type="submit" disabled={loading.b}>
+      <Button variant="contained" type="submit" disabled={isPending}>
         确认
       </Button>
       <Typography align="center">
-        {loading.b ? <CircularProgress /> : null}
+        {isPending ? <CircularProgress /> : null}
       </Typography>
     </Stack>
   );
 }
 
-function CreateOrgForm({ loading, success, error }: RequestStates) {
-  const navigate = useNavigate();
-  const { dispatch, userActions } = useStoreActions();
+function CreateOrgForm({
+  mutate,
+  isPending,
+}: CustomMutation<CreateOrgFormData>) {
   const { control, handleSubmit } = useForm<CreateOrgFormData>({
     defaultValues: {
       name: '',
@@ -130,17 +127,7 @@ function CreateOrgForm({ loading, success, error }: RequestStates) {
       role: 'org.admin',
     },
   });
-  const onSubmit = handleSubmit((data) => {
-    loading.start(true);
-    privateApi
-      .post<TokenRefresh_Response>(`/api/org/create`, data)
-      .then((res) => {
-        dispatch(userActions.setTokenRefresh(res.data));
-        success.receive();
-        navigate('/');
-      })
-      .catch((msg) => error.receive(msg));
-  });
+  const onSubmit = handleSubmit((data) => mutate(data));
 
   return (
     <Stack
@@ -191,11 +178,11 @@ function CreateOrgForm({ loading, success, error }: RequestStates) {
         required
       />
       <Alert severity="info">入驻新机构的用户默认为管理员</Alert>
-      <Button variant="contained" type="submit" disabled={loading.b}>
+      <Button variant="contained" type="submit" disabled={isPending}>
         确认
       </Button>
       <Typography align="center">
-        {loading.b ? <CircularProgress /> : null}
+        {isPending ? <CircularProgress /> : null}
       </Typography>
     </Stack>
   );

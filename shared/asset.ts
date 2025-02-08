@@ -25,6 +25,9 @@ export interface Ticket {
 /** 物料工单 */
 type AssetTicket = Ticket & Attachment<Exclude<AttachmentType, 'doc'>>;
 export interface AssetTicket_Client extends AssetTicket, Timestamp_Client {
+  _id: string;
   org: Pick<OrganizationProfile, 'id' | 'name'>;
 }
 export type AssetTicket_Server = AssetTicket & Timestamp_Server;
+
+export type UpdateTicketFormData = Pick<Ticket, 'state'>;

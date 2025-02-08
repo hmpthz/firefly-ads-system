@@ -3,51 +3,60 @@ import type {
   Organization_Server,
 } from '@shared/org.js';
 import mongoose from 'mongoose';
-import { attachmentSchemaDef } from './asset.model.js';
+import { attachmentSchemaDef, type AssetTicketDoc } from './asset.model.js';
 
 export interface Organization extends Organization_Server {
   credential?: mongoose.Types.ObjectId;
   credentialTickets: mongoose.Types.ObjectId[];
+  assetTickets: mongoose.Types.ObjectId[];
 }
 export interface Organization_Populated {
-  credential?: CredentialTicket;
-  credentialTickets: CredentialTicket[];
+  credential?: CredentialTicketDoc;
+  credentialTickets: CredentialTicketDoc[];
+  assetTickets: AssetTicketDoc[];
 }
 
 export interface CredentialTicket extends CredentialTicket_Server {
   org: mongoose.Types.ObjectId;
 }
 export interface CredentialTicket_Populated {
-  org: Organization_Server;
+  org: OrganizationDoc;
 }
 
-const organizationSchema = new mongoose.Schema<Organization>({
-  name: {
-    type: String,
-    required: true,
+const organizationSchema = new mongoose.Schema<Organization>(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+    contactPerson: {
+      type: String,
+      required: true,
+    },
+    contactEmail: {
+      type: String,
+      required: true,
+    },
+    credential: { type: mongoose.Types.ObjectId, ref: 'CredentialTicket' },
+    credentialTickets: {
+      type: [{ type: mongoose.Types.ObjectId, ref: 'CredentialTicket' }],
+      default: [],
+    },
+    assetTickets: {
+      type: [{ type: mongoose.Types.ObjectId, ref: 'AssetTicket' }],
+      default: [],
+    },
   },
-  description: {
-    type: String,
-    required: true,
-  },
-  address: {
-    type: String,
-    required: true,
-  },
-  contactPerson: {
-    type: String,
-    required: true,
-  },
-  contactEmail: {
-    type: String,
-    required: true,
-  },
-  credential: { type: mongoose.Types.ObjectId, ref: 'CredentialTicket' },
-  credentialTickets: {
-    type: [{ type: mongoose.Types.ObjectId, ref: 'CredentialTicket' }],
-    default: [],
-  },
-});
+  { timestamps: true }
+);
 organizationSchema.index({ name: 1 }, { unique: true });
 export const organizationModel = mongoose.model<Organization>(
   'Organization',
@@ -62,7 +71,7 @@ const credentialTicketSchema = new mongoose.Schema<CredentialTicket>(
       required: true,
     },
     attachments: [attachmentSchemaDef],
-    // @ts-ignore
+    // @ts-expect-error
     org: { type: mongoose.Types.ObjectId, ref: 'Organization', required: true },
   },
   { timestamps: true }

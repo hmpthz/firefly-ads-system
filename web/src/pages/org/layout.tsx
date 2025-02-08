@@ -1,6 +1,7 @@
 import { AppBarOffset, FakeLink, TitleLabel } from '@/components/UI';
 import {
   AppBar,
+  Avatar,
   Box,
   Divider,
   Drawer,
@@ -14,32 +15,100 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { useStoreActions, useStoreSlice } from '@/store';
 import HomeIcon from '@mui/icons-material/Home';
 import BusinessIcon from '@mui/icons-material/Business';
 import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
-import { useStoreSlice } from '@/store';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useCustomMutation } from '@/hooks/useCustomQuery';
+import { privateApi } from '@/utils/axios';
 
 const DRAWER_WIDTH = 240;
 
-const DrawerButton = ({
+export const DrawerButton = ({
   text,
   icon,
+  to,
+  onClick,
+  disabled,
 }: {
   text: string;
   icon: React.JSX.Element;
-}) => (
-  <ListItem>
-    <ListItemButton>
-      <ListItemIcon>{icon}</ListItemIcon>
-      <ListItemText primary={text} />
-    </ListItemButton>
-  </ListItem>
+  to?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}) => {
+  const navigate = useNavigate();
+  const handleClick = () => {
+    if (to) {
+      navigate(to);
+    }
+    onClick?.();
+  };
+
+  return (
+    <ListItem disablePadding>
+      <ListItemButton
+        sx={{ px: 3, py: 1.5 }}
+        onClick={handleClick}
+        disabled={disabled}
+      >
+        <ListItemIcon>{icon}</ListItemIcon>
+        <ListItemText primary={text} />
+      </ListItemButton>
+    </ListItem>
+  );
+};
+
+export const DashboardDrawer = ({ children }: ChildrenProps) => (
+  <Drawer
+    variant="permanent"
+    sx={{
+      width: DRAWER_WIDTH,
+      flexShrink: 0,
+      [`& .MuiDrawer-paper`]: {
+        width: DRAWER_WIDTH,
+      },
+    }}
+  >
+    {children}
+  </Drawer>
 );
 
-export function OrgDashboardLayout() {
-  const { profile } = useStoreSlice('user');
+export function ProfileBox() {
+  const profile = useStoreSlice('user').profile!;
+  const { dispatch, userActions } = useStoreActions();
+  const { mutate, isPending } = useCustomMutation(() =>
+    privateApi
+      .post('/api/auth/signout')
+      .then(() => dispatch(userActions.clearAll()))
+  );
 
+  return (
+    <Stack spacing={1} sx={{ alignItems: 'center' }}>
+      <Avatar
+        alt="profile-photo"
+        src="/blank-profile.png"
+        sx={{ width: 60, height: 60 }}
+      />
+      <Typography fontWeight="bold">{profile.username}</Typography>
+      <Typography variant="body2">({profile.email})</Typography>
+      <List sx={{ width: 1 }}>
+        <DrawerButton text="用户详情" icon={<ManageAccountsIcon />} />
+        <DrawerButton
+          text="退出"
+          icon={<LogoutIcon />}
+          disabled={isPending}
+          onClick={() => mutate()}
+        />
+      </List>
+    </Stack>
+  );
+}
+
+export function OrgDashboardLayout() {
   return (
     <>
       <AppBar sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
@@ -54,29 +123,26 @@ export function OrgDashboardLayout() {
         </Toolbar>
       </AppBar>
       <Stack direction="row">
-        <Drawer
-          variant="permanent"
-          sx={{
-            width: DRAWER_WIDTH,
-            flexShrink: 0,
-            [`& .MuiDrawer-paper`]: {
-              width: DRAWER_WIDTH,
-            },
-          }}
-        >
+        <DashboardDrawer>
           <AppBarOffset />
           <List>
-            <DrawerButton text="首页" icon={<HomeIcon />} />
+            <Divider sx={{ my: 1 }} />
+            <DrawerButton to="/org" text="首页" icon={<HomeIcon />} />
             <Divider sx={{ my: 2 }} />
-            <DrawerButton text="机构详情" icon={<BusinessIcon />} />
-            <DrawerButton text="物料列表" icon={<SnippetFolderIcon />} />
+            <DrawerButton
+              to="/org/detail"
+              text="机构详情"
+              icon={<BusinessIcon />}
+            />
+            <DrawerButton
+              to="/org/assets"
+              text="物料列表"
+              icon={<SnippetFolderIcon />}
+            />
             <Divider sx={{ my: 2 }} />
-            <Stack>
-              <Typography>{profile!.username}</Typography>
-              <Typography>{profile!.email}</Typography>
-            </Stack>
           </List>
-        </Drawer>
+          <ProfileBox />
+        </DashboardDrawer>
         <Box sx={{ flexGrow: 1 }}>
           <AppBarOffset />
           <Box sx={{ px: 4, py: 2 }}>

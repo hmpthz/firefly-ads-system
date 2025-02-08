@@ -61,7 +61,18 @@ export class HandledError {
       'Wrong user Id',
       404
     ),
+    'org|no_id|404': new HandledError('OrgError', 'Org id not found', 404),
     'org|no_name|404': new HandledError('OrgError', 'Org name not found', 404),
+    'ticket|no_id|404': new HandledError(
+      'TicketError',
+      'Ticket id not found',
+      404
+    ),
+    'ticket|no_orgid|404': new HandledError(
+      'TicketError',
+      'OrgId for ticket not found',
+      404
+    ),
   };
 
   errmsg: string;

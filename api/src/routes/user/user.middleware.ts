@@ -32,4 +32,21 @@ export const editUserAuthHandler: () => EditUserAuthHandler =
     ) {
       return next(HandledError.list['auth|no_permission|403']);
     }
+    return next();
+  };
+
+export const userFinder: (populateOrg?: boolean) => AuthSessionHandler =
+  (populateOrg = false) =>
+  async (_req, res, next) => {
+    const { userId } = res.locals;
+    const query = userModel.findById(userId);
+    if (populateOrg) {
+      query.populate('org');
+    }
+    const user = await query;
+    if (!user) {
+      return next(HandledError.list['auth|wrong_userid|404']);
+    }
+    res.locals.user = user;
+    return next();
   };

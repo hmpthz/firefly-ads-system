@@ -10,21 +10,20 @@ interface Auth_Locals {
   userId: string;
   userRole: UserRole;
 }
-export type AuthHandler<ReqBody = object, ReqParams = object> = RequestHandler<
-  ReqParams,
-  object,
-  ReqBody,
-  object,
-  Auth_Locals
->;
+export type AuthHandler<
+  ReqBody = object,
+  ReqParams = object,
+  ReqQuery = object
+> = RequestHandler<ReqParams, object, ReqBody, ReqQuery, Auth_Locals>;
 export type AuthSessionHandler<
   ReqBody = object,
-  ReqParams = object
+  ReqParams = object,
+  ReqQuery = object
 > = RequestHandler<
   ReqParams,
   object,
   ReqBody,
-  object,
+  ReqQuery,
   Auth_Locals & Session_Locals
 >;
 

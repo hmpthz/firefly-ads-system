@@ -1,6 +1,6 @@
 import { useStoreSlice } from '@/store';
-import { Alert, CircularProgress, Typography } from '@mui/material';
-import { Navigate, useNavigation, type RouteObject } from 'react-router-dom';
+import { Alert } from '@mui/material';
+import { Navigate, type RouteObject } from 'react-router-dom';
 
 /** 鉴权路由，根据用户角色重定向至相应页 */
 export const indexRoute: RouteObject = {
@@ -9,16 +9,9 @@ export const indexRoute: RouteObject = {
 };
 
 function IndexRedirect() {
-  const { state } = useNavigation();
   const { auth, profile } = useStoreSlice('user');
 
-  if (state == 'loading') {
-    return (
-      <Typography align="center">
-        <CircularProgress />
-      </Typography>
-    );
-  } else if (!auth || !profile) {
+  if (!auth || !profile) {
     return <Navigate to="/signin" />;
   } else if (auth.role.startsWith('org')) {
     if (profile.orgId) {
