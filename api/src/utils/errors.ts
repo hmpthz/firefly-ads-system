@@ -10,7 +10,7 @@ export class HandledError {
       'Failed to find valid token claims',
       404
     ),
-    'signin|no_email|404': new HandledError(
+    'signin|wrong_email|404': new HandledError(
       'SignInError',
       'Email not found',
       404
@@ -53,24 +53,27 @@ export class HandledError {
     ),
     'auth|wrong_userid|404': new HandledError(
       'AuthError',
-      'access_token has wrong user Id',
+      'User Id in access_token not found',
       404
     ),
-    'param|wrong_userid|404': new HandledError(
+    'param|wrong_id|404': new HandledError(
       'ParametersError',
-      'Wrong user Id',
+      'Id in request parameters not found',
       404
     ),
-    'org|no_id|404': new HandledError('OrgError', 'Org id not found', 404),
-    'org|no_name|404': new HandledError('OrgError', 'Org name not found', 404),
-    'ticket|no_id|404': new HandledError(
-      'TicketError',
-      'Ticket id not found',
+    'req|wrong_id|404': new HandledError(
+      'RequestBodyError',
+      'Id in request body or query not found',
       404
     ),
-    'ticket|no_orgid|404': new HandledError(
-      'TicketError',
-      'OrgId for ticket not found',
+    'req|wrong_orgid|404': new HandledError(
+      'RequestBodyError',
+      'OrgId in request body or query not found',
+      404
+    ),
+    'req|wrong_name|404': new HandledError(
+      'RequestBodyError',
+      'Name in request body or query not found',
       404
     ),
   };

@@ -10,6 +10,7 @@ import {
   IconButton,
   Paper,
   Table,
+  TableBody,
   TableCell,
   TableContainer,
   TableHead,
@@ -68,20 +69,24 @@ function Page() {
       <TableContainer>
         <Table>
           <TableHead>
-            <TableCell>上传时间</TableCell>
-            <TableCell>名称</TableCell>
-            <TableCell>类型</TableCell>
-            <TableCell>机构</TableCell>
-            <TableCell>审核状态</TableCell>
-            <TableCell>操作</TableCell>
+            <TableRow>
+              <TableCell>上传时间</TableCell>
+              <TableCell>名称</TableCell>
+              <TableCell>类型</TableCell>
+              <TableCell>机构</TableCell>
+              <TableCell>审核状态</TableCell>
+              <TableCell>操作</TableCell>
+            </TableRow>
           </TableHead>
-          {data?.map((item) => (
-            <ItemRow
-              key={item.id}
-              {...item}
-              handleClick={() => setDialogData({ open: true, item })}
-            />
-          ))}
+          <TableBody>
+            {data?.map((item) => (
+              <ItemRow
+                key={item._id}
+                {...item}
+                handleClick={() => setDialogData({ open: true, item })}
+              />
+            ))}
+          </TableBody>
         </Table>
       </TableContainer>
       <Typography align="center">
@@ -127,9 +132,7 @@ function AssetDialog({
 }) {
   const [state, setState] = useState<TicketState>('in-progress');
   const { mutate, isPending } = useCustomMutation((item: AssetTicket_Client) =>
-    privateApi
-      .post(`/api/ads/asset/${item._id}/update`, { state })
-      .then(() => void 0)
+    privateApi.patch(`/api/ads/asset/${item._id}`, { state }).then(() => void 0)
   );
   const handleSubmit = () => {
     mutate(item!, { onSuccess: handleClose });

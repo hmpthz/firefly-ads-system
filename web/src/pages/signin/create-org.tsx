@@ -17,7 +17,7 @@ import {
   RHFTextField,
 } from '@/components/RHFInputs';
 import { privateApi } from '@/utils/axios';
-import { type CreateOrgFormData } from '@shared/org';
+import { type NewOrgFormData } from '@shared/org';
 import { useCustomMutation, type CustomMutation } from '@/hooks/useCustomQuery';
 
 export const createOrgRoute: RouteObject = {
@@ -40,7 +40,7 @@ function CreateOrg() {
         navigate('/');
       })
   );
-  const createOrgMutation = useCustomMutation((data: CreateOrgFormData) =>
+  const createOrgMutation = useCustomMutation((data: NewOrgFormData) =>
     privateApi.post<User_Client>(`/api/org/create`, data).then((res) => {
       dispatch(userActions.setProfile(res.data));
       navigate('/');
@@ -113,11 +113,8 @@ function InputOrgForm({
   );
 }
 
-function CreateOrgForm({
-  mutate,
-  isPending,
-}: CustomMutation<CreateOrgFormData>) {
-  const { control, handleSubmit } = useForm<CreateOrgFormData>({
+function CreateOrgForm({ mutate, isPending }: CustomMutation<NewOrgFormData>) {
+  const { control, handleSubmit } = useForm<NewOrgFormData>({
     defaultValues: {
       name: '',
       description: '',

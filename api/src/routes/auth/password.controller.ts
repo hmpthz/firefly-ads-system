@@ -20,7 +20,7 @@ export const signUp: SessionHandler<SignUpFormData>[] = [
     if (orgName) {
       const found = await organizationModel.findOne({ name: orgName });
       if (!found) {
-        return next(HandledError.list['org|no_name|404']);
+        return next(HandledError.list['req|wrong_name|404']);
       }
       org = found._id;
     }
@@ -45,7 +45,7 @@ export const signIn: SessionHandler<SignInFormData>[] = [
     const { email, password } = req.body;
     const foundUser = await userModel.findOne({ email });
     if (!foundUser) {
-      return next(HandledError.list['signin|no_email|404']);
+      return next(HandledError.list['signin|wrong_email|404']);
     }
     if (!bcryptjs.compareSync(password, foundUser.password)) {
       return next(HandledError.list['signin|wrong_credential|401']);

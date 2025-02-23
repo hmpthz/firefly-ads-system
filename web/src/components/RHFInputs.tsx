@@ -41,20 +41,34 @@ export const RHFSelect = <T extends FieldValues, P extends Path<T>>({
   labelText,
   labelId,
   items,
+  onChange,
+  required,
 }: {
   control: Control<T>;
   name: P;
   labelText: string;
   labelId: string;
   items: Record<string, PathValue<T, P>>;
+  onChange?: () => void;
+  required?: boolean;
 }) => (
-  <FormControl>
+  <FormControl required={required}>
     <InputLabel id={labelId}>{labelText}</InputLabel>
     <Controller
       control={control}
       name={name}
-      render={({ field: { ref: _, ...register } }) => (
-        <Select {...register} labelId={labelId} label={labelText}>
+      render={({
+        field: { ref: _, onChange: controlOnChange, ...register },
+      }) => (
+        <Select
+          onChange={(e) => {
+            controlOnChange(e);
+            onChange?.();
+          }}
+          {...register}
+          labelId={labelId}
+          label={labelText}
+        >
           {Object.entries(items).map(([itemName, val]) => (
             <MenuItem key={val} value={val}>
               {itemName}

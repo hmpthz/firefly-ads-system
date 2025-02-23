@@ -13,16 +13,18 @@ import {
 import { type Attachment } from '@shared/asset';
 import { useState, type FormEventHandler } from 'react';
 import { useNavigate, type RouteObject } from 'react-router-dom';
+import { GoBack } from '@/components/UI';
 
-export const createAssetRoute: RouteObject = {
-  path: 'create-asset',
+export const createCredentialRoute: RouteObject = {
+  path: 'create-credential',
   element: <Page />,
 };
 
 function Page() {
   return (
     <>
-      <Typography variant="h4">上传物料资源</Typography>
+      <GoBack />
+      <Typography variant="h4">上传机构资质文件</Typography>
       <Divider sx={{ my: 3 }} />
       <Box sx={{}}>
         <Form />
@@ -33,14 +35,18 @@ function Page() {
 
 function Form() {
   const navigate = useNavigate();
-  const [attachment, setAttachment] = useState<Attachment>();
-  const { mutate, isPending } = useCustomMutation((data: Attachment) =>
-    privateApi.post('/api/ads/asset/create', data).then(() => void 0)
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const { mutate, isPending } = useCustomMutation((data: Attachment[]) =>
+    privateApi.post('/api/org/credential/create', data).then(() => void 0)
   );
+  const deleteItem = (i: number) => {
+    attachments.splice(i, 1);
+    setAttachments([...attachments]);
+  };
   const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
-    if (!attachment) return;
-    mutate(attachment, { onSuccess: () => navigate(-1) });
+    if (attachments.length == 0) return;
+    mutate(attachments, { onSuccess: () => navigate(-1) });
   };
 
   return (
@@ -50,19 +56,19 @@ function Form() {
       sx={{ width: 1, maxWidth: 500 }}
       onSubmit={handleSubmit}
     >
-      <Alert severity="info">一件物料只能上传一个附件</Alert>
-      {attachment ? (
+      <Alert severity="info">可以上传多个附件</Alert>
+      {attachments.map((a, i) => (
         <FakeAttachment
-          key={attachment.name}
-          {...attachment}
-          onDelete={isPending ? undefined : () => setAttachment(undefined)}
+          key={a.name}
+          {...a}
+          onDelete={isPending ? undefined : () => deleteItem(i)}
         />
-      ) : (
-        <FakeFileInput
-          filter={['text', 'image', 'video']}
-          onAdd={(a) => setAttachment(a)}
-        />
-      )}
+      ))}
+      {attachments.length > 0 && <Divider />}
+      <FakeFileInput
+        filter={['text', 'doc', 'image']}
+        onAdd={(a) => setAttachments((prev) => [...prev, a])}
+      />
       <Divider />
       <Button variant="contained" type="submit" disabled={isPending}>
         上传

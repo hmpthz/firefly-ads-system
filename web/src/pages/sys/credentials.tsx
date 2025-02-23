@@ -11,6 +11,7 @@ import {
   Paper,
   Stack,
   Table,
+  TableBody,
   TableCell,
   TableContainer,
   TableHead,
@@ -70,19 +71,23 @@ function Page() {
       <TableContainer>
         <Table>
           <TableHead>
-            <TableCell>上传时间</TableCell>
-            <TableCell>机构</TableCell>
-            <TableCell>附件数量</TableCell>
-            <TableCell>审核状态</TableCell>
-            <TableCell>操作</TableCell>
+            <TableRow>
+              <TableCell>上传时间</TableCell>
+              <TableCell>机构</TableCell>
+              <TableCell>附件数量</TableCell>
+              <TableCell>审核状态</TableCell>
+              <TableCell>操作</TableCell>
+            </TableRow>
           </TableHead>
-          {data?.map((item) => (
-            <ItemRow
-              key={item.id}
-              {...item}
-              handleClick={() => setDialogData({ open: true, item })}
-            />
-          ))}
+          <TableBody>
+            {data?.map((item) => (
+              <ItemRow
+                key={item._id}
+                {...item}
+                handleClick={() => setDialogData({ open: true, item })}
+              />
+            ))}
+          </TableBody>
         </Table>
       </TableContainer>
       <Typography align="center">
@@ -128,7 +133,7 @@ function AssetDialog({
   const { mutate, isPending } = useCustomMutation(
     (item: CredentialTicket_Client) =>
       privateApi
-        .post(`/api/org/credential/${item._id}/update`, { state })
+        .patch(`/api/org/credential/${item._id}`, { state })
         .then(() => void 0)
   );
   const handleSubmit = () => {

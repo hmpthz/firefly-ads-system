@@ -22,10 +22,15 @@ import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import CancelOutlined from '@mui/icons-material/CancelOutlined';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { tCredentialState } from '@/utils/translate';
-import { orgDetailRoute } from './detail';
+import { orgDetailRoute } from './credentials';
 import { orgAssetsRoute } from './assets';
-import { createCredentialRoute } from './upload-credential';
-import { createAssetRoute } from './upload-asset';
+import { createCredentialRoute } from './credential-create';
+import { createAssetRoute } from './asset-create';
+import { creationsRoute } from './creations';
+import { campaignsRoute } from './campaigns';
+import { createCreationRoute } from './creation-create';
+import { creationDetailRoute } from './creation-detail';
+import { createCampaignRoute } from './campaign-create';
 
 export const orgRoute: RouteObject = {
   path: '/org',
@@ -35,8 +40,13 @@ export const orgRoute: RouteObject = {
     { index: true, element: <Page /> },
     orgDetailRoute,
     orgAssetsRoute,
+    creationsRoute,
+    creationDetailRoute,
+    campaignsRoute,
     createCredentialRoute,
     createAssetRoute,
+    createCreationRoute,
+    createCampaignRoute,
   ],
 };
 
@@ -44,7 +54,7 @@ function Page() {
   const orgId = useStoreSlice('user').profile!.orgId!;
   const orgQuery = useCustomQuery(['org', orgId], () =>
     privateApi
-      .get<Organization_Client>(`/api/org/${orgId}/item`)
+      .get<Organization_Client>(`/api/org/${orgId}`)
       .then((res) => res.data)
   );
   const isLoading = orgQuery.isLoading;

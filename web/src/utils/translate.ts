@@ -1,4 +1,5 @@
 import type { AttachmentType, TicketState } from '@shared/asset';
+import type { PricingModel } from '@shared/campaign';
 
 export function tTicketState(state: TicketState): string {
   return (
@@ -25,4 +26,17 @@ const contentTypesMap = Object.fromEntries(contentTypes);
 
 export function tContentType(type: AttachmentType) {
   return contentTypesMap[type];
+}
+
+export const pricingModelNames: Record<string, PricingModel> = {
+  '每次点击成本（CPC）': 'cpc',
+  '每千人成本（CPM）': 'cpm',
+  '每时间段成本（CPT）': 'cpt',
+};
+const pricingModelMap = Object.fromEntries(
+  Object.entries(pricingModelNames).map(([k, v]) => [v, k])
+) as Record<PricingModel, string>;
+
+export function tPricingModel(model: PricingModel) {
+  return pricingModelMap[model];
 }

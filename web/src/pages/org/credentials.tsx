@@ -1,7 +1,12 @@
-import { useCustomQuery } from '@/hooks/useCustomQuery';
+import {
+  useCustomMutation,
+  useCustomQuery,
+  type CustomMutateFn,
+} from '@/hooks/useCustomQuery';
 import { useStoreSlice } from '@/store';
 import { privateApi } from '@/utils/axios';
 import { tCredentialState, tTicketState } from '@/utils/translate';
+import GridV2 from '@mui/material/Unstable_Grid2';
 import {
   Box,
   Button,
@@ -11,7 +16,6 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
-  Grid,
   IconButton,
   List,
   ListItem,
@@ -20,6 +24,7 @@ import {
   Skeleton,
   Stack,
   Table,
+  TableBody,
   TableCell,
   TableContainer,
   TableHead,
@@ -44,7 +49,7 @@ function Page() {
   const orgId = useStoreSlice('user').profile!.orgId!;
   const orgQuery = useCustomQuery(['org', orgId], () =>
     privateApi
-      .get<Organization_Client>(`/api/org/${orgId}/item`)
+      .get<Organization_Client>(`/api/org/${orgId}`)
       .then((res) => res.data)
   );
   const isLoading = orgQuery.isLoading;
@@ -86,8 +91,8 @@ function InfoBlock({
         </Button>
       </Box>
       <Divider sx={{ my: 1 }} />
-      <Grid container>
-        <Grid xs={6}>
+      <GridV2 container>
+        <GridV2 xs={6}>
           <List dense>
             <ListItem>
               <ListItemText primary="描述" secondary={description} />
@@ -96,8 +101,8 @@ function InfoBlock({
               <ListItemText primary="地址" secondary={address} />
             </ListItem>
           </List>
-        </Grid>
-        <Grid xs={6}>
+        </GridV2>
+        <GridV2 xs={6}>
           <List dense>
             <ListItem>
               <ListItemText
@@ -115,8 +120,8 @@ function InfoBlock({
               />
             </ListItem>
           </List>
-        </Grid>
-      </Grid>
+        </GridV2>
+      </GridV2>
     </Paper>
   );
 }
@@ -124,13 +129,24 @@ function InfoBlock({
 function CredentialList() {
   const navigate = useNavigate();
   const orgId = useStoreSlice('user').profile!.orgId!;
-  const { data, isLoading } = useCustomQuery(['credentials', orgId], () =>
-    privateApi
-      .get<CredentialTicket_Client[]>(`/api/org/credential/list?orgId=${orgId}`)
-      .then((res) => res.data)
+  const { data, refetch, isLoading } = useCustomQuery(
+    ['credentials', orgId],
+    () =>
+      privateApi
+        .get<CredentialTicket_Client[]>(
+          `/api/org/credential/list?orgId=${orgId}`
+        )
+        .then((res) => res.data)
+  );
+  const { mutate: handleDelete, isPending: isDeleting } = useCustomMutation(
+    (id: string) =>
+      privateApi.delete(`/api/org/credential/${id}`).then(() => void refetch())
   );
   const [dialogData, setDialogData] = useState<DialogData>({ open: false });
-  const closeDialog = () => setDialogData((prev) => ({ ...prev, open: false }));
+  const closeDialog = () => {
+    if (isDeleting) return;
+    setDialogData((prev) => ({ ...prev, open: false }));
+  };
 
   return (
     <Paper elevation={2} sx={{ p: 2, mt: 4 }}>
@@ -155,24 +171,33 @@ function CredentialList() {
       <TableContainer>
         <Table>
           <TableHead>
-            <TableCell>上传时间</TableCell>
-            <TableCell>审核状态</TableCell>
-            <TableCell>附件数量</TableCell>
-            <TableCell>操作</TableCell>
+            <TableRow>
+              <TableCell>上传时间</TableCell>
+              <TableCell>审核状态</TableCell>
+              <TableCell>附件数量</TableCell>
+              <TableCell>操作</TableCell>
+            </TableRow>
           </TableHead>
-          {data?.map((item) => (
-            <ItemRow
-              key={item.id}
-              {...item}
-              handleClick={() => setDialogData({ open: true, item })}
-            />
-          ))}
+          <TableBody>
+            {data?.map((item) => (
+              <ItemRow
+                key={item._id}
+                {...item}
+                handleClick={() => setDialogData({ open: true, item })}
+              />
+            ))}
+          </TableBody>
         </Table>
       </TableContainer>
       <Typography align="center">
         {isLoading ? <CircularProgress /> : null}
       </Typography>
-      <CredentialDialog data={dialogData} handleClose={closeDialog} />
+      <CredentialDialog
+        data={dialogData}
+        isDeleting={isDeleting}
+        handleDelete={handleDelete}
+        handleClose={closeDialog}
+      />
     </Paper>
   );
 }
@@ -201,9 +226,13 @@ type DialogData = {
 };
 function CredentialDialog({
   data: { open, item },
+  isDeleting,
+  handleDelete,
   handleClose,
 }: {
   data: DialogData;
+  isDeleting: boolean;
+  handleDelete: CustomMutateFn<string>;
   handleClose: () => void;
 }) {
   if (!item) return;
@@ -219,7 +248,15 @@ function CredentialDialog({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button variant="contained" color="error" endIcon={<DeleteIcon />}>
+        <Button
+          variant="contained"
+          color="error"
+          endIcon={<DeleteIcon />}
+          disabled={isDeleting}
+          onClick={() =>
+            handleDelete(item?._id, { onSuccess: () => handleClose() })
+          }
+        >
           删除
         </Button>
       </DialogActions>

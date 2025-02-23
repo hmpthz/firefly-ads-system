@@ -1,5 +1,7 @@
 import WhatshotIcon from '@mui/icons-material/Whatshot';
-import { Link, styled, type LinkProps } from '@mui/material';
+import { Box, Link, styled, Typography, type LinkProps } from '@mui/material';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import { useNavigate } from 'react-router-dom';
 
 export const TitleLabel = ({ mr, top }: { mr?: string; top?: string }) => (
   <>
@@ -30,5 +32,24 @@ export const FakeLink = ({
     {children}
   </Link>
 );
+
+export const GoBack = ({ onClick }: { onClick?: () => void }) => {
+  const navigate = useNavigate();
+
+  return (
+    <Typography sx={{ mb: 2, fontWeight: 'bold' }}>
+      <Box
+        component="a"
+        sx={{ cursor: 'pointer' }}
+        onClick={onClick ?? (() => navigate(-1))}
+      >
+        <ArrowBackIosIcon
+          sx={{ fontSize: 'inherit', verticalAlign: 'text-bottom' }}
+        />
+        返回
+      </Box>
+    </Typography>
+  );
+};
 
 export const AppBarOffset = styled('div')(({ theme }) => theme.mixins.toolbar);

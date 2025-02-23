@@ -130,6 +130,7 @@ export const tokenRefreshHandler: (
   const resBody: TokenRefresh_Response = {
     auth: { accessToken, expiredAt, role: user.role },
     profile: {
+      _id: user.id,
       id: user.id,
       email: user.email,
       username: user.username,

@@ -3,17 +3,13 @@ import type {
   Organization_Server,
 } from '@shared/org.js';
 import mongoose from 'mongoose';
-import { attachmentSchemaDef, type AssetTicketDoc } from './asset.model.js';
+import { attachmentSchemaDef } from './asset.model.js';
 
 export interface Organization extends Organization_Server {
   credential?: mongoose.Types.ObjectId;
-  credentialTickets: mongoose.Types.ObjectId[];
-  assetTickets: mongoose.Types.ObjectId[];
 }
 export interface Organization_Populated {
   credential?: CredentialTicketDoc;
-  credentialTickets: CredentialTicketDoc[];
-  assetTickets: AssetTicketDoc[];
 }
 
 export interface CredentialTicket extends CredentialTicket_Server {
@@ -46,18 +42,11 @@ const organizationSchema = new mongoose.Schema<Organization>(
       required: true,
     },
     credential: { type: mongoose.Types.ObjectId, ref: 'CredentialTicket' },
-    credentialTickets: {
-      type: [{ type: mongoose.Types.ObjectId, ref: 'CredentialTicket' }],
-      default: [],
-    },
-    assetTickets: {
-      type: [{ type: mongoose.Types.ObjectId, ref: 'AssetTicket' }],
-      default: [],
-    },
   },
   { timestamps: true }
 );
 organizationSchema.index({ name: 1 }, { unique: true });
+
 export const organizationModel = mongoose.model<Organization>(
   'Organization',
   organizationSchema

@@ -8,10 +8,31 @@ import {
 } from '@/models/org.model.js';
 import { userModel } from '@/models/user.model.js';
 import { HandledError } from '@/utils/errors.js';
-import type { CreateOrgFormData } from '@shared/org.js';
+import type { NewOrgFormData } from '@shared/org.js';
 import type { User_Client } from '@shared/user.js';
 
-export const createOrg: AuthHandler<CreateOrgFormData>[] = [
+export const getOrg: AuthHandler<object, ReqParam<'id'>>[] = [
+  authHandler(),
+  async (req, res, next) => {
+    const found = await organizationModel
+      .findById(req.params.id)
+      .populate<Organization_Populated>('credential');
+    if (!found) {
+      return next(HandledError.list['param|wrong_id|404']);
+    }
+    res.status(200).json(found.toJSON());
+  },
+];
+
+export const getOrgList: AuthHandler[] = [
+  authHandler(['sys.xiaoer']),
+  async (_req, res) => {
+    const data = await organizationModel.find().populate('credential');
+    res.json(data.map((item) => item.toJSON()));
+  },
+];
+
+export const createOrg: AuthHandler<NewOrgFormData>[] = [
   authHandler(),
   async (req, res, next) => {
     // 首先创建新机构
@@ -33,6 +54,7 @@ export const createOrg: AuthHandler<CreateOrgFormData>[] = [
       return next(HandledError.list['auth|wrong_userid|404']);
     }
     const resBody: User_Client = {
+      _id: user.id,
       id: user.id,
       email: user.email,
       username: user.username,
@@ -42,26 +64,5 @@ export const createOrg: AuthHandler<CreateOrgFormData>[] = [
       updatedAt: user.updatedAt.toISOString(),
     };
     res.json(resBody);
-  },
-];
-
-export const getOrg: AuthHandler<object, ReqParam<'id'>>[] = [
-  authHandler(),
-  async (req, res, next) => {
-    const found = await organizationModel
-      .findById(req.params.id)
-      .populate<Organization_Populated>('credential');
-    if (!found) {
-      return next(HandledError.list['org|no_id|404']);
-    }
-    res.status(200).json(found.toJSON());
-  },
-];
-
-export const getOrgList: AuthHandler[] = [
-  authHandler(['sys.xiaoer']),
-  async (_req, res) => {
-    const data = await organizationModel.find().populate('credential');
-    res.json(data.map((item) => item.toJSON()));
   },
 ];

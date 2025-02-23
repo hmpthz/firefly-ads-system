@@ -20,7 +20,7 @@ export const editUserAuthHandler: () => EditUserAuthHandler =
     const reqUser = await userModel.findById(reqUserId);
     const initiator = await userModel.findById(initiatorUserId);
     if (!reqUser) {
-      return next(HandledError.list['param|wrong_userid|404']);
+      return next(HandledError.list['param|wrong_id|404']);
     }
     if (!initiator) {
       return next(HandledError.list['auth|wrong_userid|404']);
