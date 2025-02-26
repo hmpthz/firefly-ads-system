@@ -18,7 +18,7 @@ export const updateUser: EditUserAuthHandler<UpdateUserFormData>[] = [
     if (req.body.orgName) {
       const found = await organizationModel.findOne({ name: req.body.orgName });
       if (!found) {
-        return next(HandledError.list['org|no_name|404']);
+        return next(HandledError.list['req|wrong_name|404']);
       }
       org = found._id;
     }
@@ -39,9 +39,10 @@ export const updateUser: EditUserAuthHandler<UpdateUserFormData>[] = [
       { new: true }
     );
     if (!user) {
-      return next(HandledError.list['param|wrong_userid|404']);
+      return next(HandledError.list['param|wrong_id|404']);
     }
     const resBody: User_Client = {
+      _id: req.params.id,
       id: req.params.id,
       email: user.email,
       username: user.username,
@@ -62,7 +63,7 @@ export const deleteUser: EditUserAuthHandler[] = [
       new: true,
     });
     if (!user) {
-      return next(HandledError.list['param|wrong_userid|404']);
+      return next(HandledError.list['param|wrong_id|404']);
     }
     // TODO: also delete avatar from stroage
     res.clearCookie('refresh_token').clearCookie('has_refresh_token');

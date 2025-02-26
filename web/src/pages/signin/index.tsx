@@ -21,7 +21,7 @@ import {
   RadioGroupControl,
   RHFSelect,
   RHFTextField,
-} from '@/components/RHFInputs';
+} from '@/components/Inputs';
 import { publicApi } from '@/utils/axios';
 import { useStoreActions } from '@/store';
 import { useCustomMutation, type CustomMutation } from '@/hooks/useCustomQuery';
@@ -37,7 +37,7 @@ const ToggleButton = styled(MUIToggleButton)(() => ({ flex: 1 }));
 function Page() {
   const navigate = useNavigate();
   const { dispatch, userActions } = useStoreActions();
-  const [mode, setMode] = useState('signup');
+  const [mode, setMode] = useState('signin');
   const handleModeChange = (_: unknown, val: string) => {
     if (val) {
       setMode(val);

@@ -14,7 +14,7 @@
       "request": "launch",
       "program": "${file}",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["exec", "tsx"],
+      "runtimeArgs": ["dlx", "tsx"],
       "cwd": "${fileDirname}",
       "skipFiles": ["<node_internals>/**"]
     },
@@ -24,7 +24,7 @@
       "request": "launch",
       "url": "http://localhost:5173",
       "webRoot": "${workspaceFolder}/web",
-      "userDataDir": "C:/Workspace/.vscode/chrome-debug-profile",
+      "userDataDir": "${env:HOME}${env:USERPROFILE}/.cache/chrome-debug-profile",
       "resolveSourceMapLocations": [
         "${workspaceFolder}/**",
         "!**/node_modules/**"
@@ -36,7 +36,7 @@
       "request": "launch",
       "url": "http://localhost:5173",
       "webRoot": "${workspaceFolder}/web",
-      "userDataDir": "C:/Workspace/.vscode/edge-debug-profile",
+      "userDataDir": "${env:HOME}${env:USERPROFILE}/.cache/edge-debug-profile",
       "resolveSourceMapLocations": [
         "${workspaceFolder}/**",
         "!**/node_modules/**"

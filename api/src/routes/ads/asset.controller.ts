@@ -3,7 +3,7 @@ import {
   type AuthHandler,
   type AuthSessionHandler,
 } from '@/middlewares/auth.middleware.js';
-import type { Attachment, UpdateTicketFormData } from '@shared/asset.js';
+import type { Attachment, UpdateAssetFormData } from '@shared/asset.js';
 import { userFinder } from '../user/user.middleware.js';
 import { HandledError } from '@/utils/errors.js';
 import { assetTicketModel } from '@/models/asset.model.js';
@@ -30,44 +30,68 @@ export const getAssetList: AuthHandler<
   },
 ];
 
+export const getAssetByName: AuthHandler<object, object, ReqParam<'name'>>[] = [
+  authHandler(),
+  async (req, res, next) => {
+    const found = await assetTicketModel.findOne({ name: req.query.name });
+    if (!found) {
+      return next(HandledError.list['req|wrong_name|404']);
+    }
+    res.json(found.toJSON()).status(200);
+  },
+];
+
+export async function createAssetItem(
+  org: mongoose.Types.ObjectId,
+  data: Attachment
+) {
+  const newItem = new assetTicketModel({
+    org,
+    state: 'pending',
+    ...data,
+  });
+  await newItem.save();
+  return newItem;
+}
+
 export const createAsset: AuthSessionHandler<Attachment>[] = [
   authHandler(),
   userFinder(true),
   async (req, res, next) => {
     const { org } = <User_Populated>res.locals.user;
     if (!org) {
-      return next(HandledError.list['ticket|no_orgid|404']);
+      return next(HandledError.list['req|wrong_orgid|404']);
     }
-    const newItem = new assetTicketModel({
-      org: org._id,
-      state: 'pending',
-      ...req.body,
-    });
-    await newItem.save();
-    org.assetTickets.push(newItem._id);
-    await org.save();
-    res.status(201).end();
+    const newItem = await createAssetItem(org._id, req.body);
+    res.status(201).json(newItem.toJSON());
   },
 ];
 
-export const getAsset: AuthHandler<object, ReqParam<'id'>>[] = [
+export const updateAsset: AuthHandler<UpdateAssetFormData, ReqParam<'id'>>[] = [
   authHandler(),
-  async (req, res, next) => {},
+  async (req, res, next) => {
+    if (req.body.state && res.locals.userRole != 'sys.xiaoer') {
+      return next(HandledError.list['auth|no_permission|403']);
+    }
+    const updated = await assetTicketModel.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    if (!updated) {
+      return next(HandledError.list['param|wrong_id|404']);
+    }
+    res.status(200).end();
+  },
 ];
 
-export const updateAsset: AuthHandler<UpdateTicketFormData, ReqParam<'id'>>[] =
-  [
-    authHandler(),
-    async (req, res, next) => {
-      const { state } = req.body;
-      const updated = await assetTicketModel.findByIdAndUpdate(
-        req.params.id,
-        { $set: { state } },
-        { new: true }
-      );
-      if (!updated) {
-        return HandledError.list['ticket|no_id|404'];
-      }
-      res.status(200).end();
-    },
-  ];
+export const deleteAsset: AuthHandler<object, ReqParam<'id'>>[] = [
+  authHandler(['org.admin', 'sys.xiaoer']),
+  async (req, res, next) => {
+    const deleted = await assetTicketModel.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      return next(HandledError.list['param|wrong_id|404']);
+    }
+    res.status(200).end();
+  },
+];

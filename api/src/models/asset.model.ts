@@ -14,6 +14,10 @@ export const attachmentSchemaDef = {
     type: String,
     required: true,
   },
+  content: {
+    type: String,
+    required: true,
+  },
   contentType: {
     type: String,
     required: true,
@@ -32,6 +36,8 @@ const assetTicketSchema = new mongoose.Schema<AssetTicket>(
   },
   { timestamps: true }
 );
+assetTicketSchema.index({ name: 1 }, { unique: true });
+
 export const assetTicketModel = mongoose.model<AssetTicket>(
   'AssetTicket',
   assetTicketSchema

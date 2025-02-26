@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   MutationCache,
   QueryCache,
@@ -31,6 +32,10 @@ export type CustomMutation<TParams = void, TReturn = void> = UseMutationResult<
   string,
   TParams
 >;
+export type CustomMutateFn<TParams = void, TReturn = void> = CustomMutation<
+  TParams,
+  TReturn
+>['mutate'];
 
 export function useCustomQuery<TReturn = unknown>(
   key: any[],

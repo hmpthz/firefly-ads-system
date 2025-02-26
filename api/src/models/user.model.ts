@@ -57,7 +57,6 @@ const userSchema = new mongoose.Schema<User>(
   },
   { timestamps: true }
 );
-
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ 'session.refreshToken': 1 }, { unique: true, sparse: true });
 

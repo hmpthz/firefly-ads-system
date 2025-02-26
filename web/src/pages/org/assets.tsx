@@ -10,6 +10,7 @@ import {
   IconButton,
   Paper,
   Table,
+  TableBody,
   TableCell,
   TableContainer,
   TableHead,
@@ -20,7 +21,11 @@ import { useNavigate, type RouteObject } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import type { AssetTicket_Client } from '@shared/asset';
 import { privateApi } from '@/utils/axios';
-import { useCustomQuery } from '@/hooks/useCustomQuery';
+import {
+  useCustomMutation,
+  useCustomQuery,
+  type CustomMutateFn,
+} from '@/hooks/useCustomQuery';
 import { useStoreSlice } from '@/store';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
@@ -40,13 +45,20 @@ export const orgAssetsRoute: RouteObject = {
 function Page() {
   const navigate = useNavigate();
   const orgId = useStoreSlice('user').profile!.orgId!;
-  const { data, isLoading } = useCustomQuery(['assets', orgId], () =>
+  const { data, refetch, isLoading } = useCustomQuery(['assets', orgId], () =>
     privateApi
       .get<AssetTicket_Client[]>(`/api/ads/asset/list?orgId=${orgId}`)
       .then((res) => res.data)
   );
+  const { mutate: handleDelete, isPending: isDeleting } = useCustomMutation(
+    (id: string) =>
+      privateApi.delete(`/api/ads/asset/${id}`).then(() => void refetch())
+  );
   const [dialogData, setDialogData] = useState<DialogData>({ open: false });
-  const closeDialog = () => setDialogData((prev) => ({ ...prev, open: false }));
+  const closeDialog = () => {
+    if (isDeleting) return;
+    setDialogData((prev) => ({ ...prev, open: false }));
+  };
 
   return (
     <Paper elevation={2} sx={{ p: 2 }}>
@@ -71,25 +83,34 @@ function Page() {
       <TableContainer>
         <Table>
           <TableHead>
-            <TableCell>上传时间</TableCell>
-            <TableCell>名称</TableCell>
-            <TableCell>类型</TableCell>
-            <TableCell>审核状态</TableCell>
-            <TableCell>操作</TableCell>
+            <TableRow>
+              <TableCell>上传时间</TableCell>
+              <TableCell>名称</TableCell>
+              <TableCell>类型</TableCell>
+              <TableCell>审核状态</TableCell>
+              <TableCell>操作</TableCell>
+            </TableRow>
           </TableHead>
-          {data?.map((item) => (
-            <ItemRow
-              key={item.id}
-              {...item}
-              handleClick={() => setDialogData({ open: true, item })}
-            />
-          ))}
+          <TableBody>
+            {data?.map((item) => (
+              <ItemRow
+                key={item._id}
+                {...item}
+                handleClick={() => setDialogData({ open: true, item })}
+              />
+            ))}
+          </TableBody>
         </Table>
       </TableContainer>
       <Typography align="center">
         {isLoading ? <CircularProgress /> : null}
       </Typography>
-      <AssetDialog data={dialogData} handleClose={closeDialog} />
+      <AssetDialog
+        data={dialogData}
+        isDeleting={isDeleting}
+        handleDelete={handleDelete}
+        handleClose={closeDialog}
+      />
     </Paper>
   );
 }
@@ -120,9 +141,13 @@ type DialogData = {
 };
 function AssetDialog({
   data: { open, item },
+  isDeleting,
+  handleDelete,
   handleClose,
 }: {
   data: DialogData;
+  isDeleting: boolean;
+  handleDelete: CustomMutateFn<string>;
   handleClose: () => void;
 }) {
   if (!item) return;
@@ -134,7 +159,15 @@ function AssetDialog({
         <FakeAttachment {...item} />
       </DialogContent>
       <DialogActions>
-        <Button variant="contained" color="error" endIcon={<DeleteIcon />}>
+        <Button
+          variant="contained"
+          color="error"
+          endIcon={<DeleteIcon />}
+          disabled={isDeleting}
+          onClick={() =>
+            handleDelete(item?._id, { onSuccess: () => handleClose() })
+          }
+        >
           删除
         </Button>
       </DialogActions>

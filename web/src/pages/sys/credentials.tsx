@@ -11,6 +11,7 @@ import {
   Paper,
   Stack,
   Table,
+  TableBody,
   TableCell,
   TableContainer,
   TableHead,
@@ -18,22 +19,18 @@ import {
   Typography,
 } from '@mui/material';
 import { useNavigate, type RouteObject } from 'react-router-dom';
-import AddIcon from '@mui/icons-material/Add';
-import { type TicketState, type AssetTicket_Client } from '@shared/asset';
+import { type TicketState } from '@shared/asset';
 import { privateApi } from '@/utils/axios';
 import { useCustomMutation, useCustomQuery } from '@/hooks/useCustomQuery';
-import { useStoreSlice } from '@/store';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PublishIcon from '@mui/icons-material/Publish';
 import {
-  tContentType,
   tCredentialState,
-  tTicketState,
 } from '@/utils/translate';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { FakeAttachment } from '@/components/Attachment';
 import { useState } from 'react';
-import { RadioGroupControl } from '@/components/RHFInputs';
+import { RadioGroupControl } from '@/components/Inputs';
 import type { CredentialTicket_Client } from '@shared/org';
 
 export const sysCredentialsRoute: RouteObject = {
@@ -70,19 +67,23 @@ function Page() {
       <TableContainer>
         <Table>
           <TableHead>
-            <TableCell>上传时间</TableCell>
-            <TableCell>机构</TableCell>
-            <TableCell>附件数量</TableCell>
-            <TableCell>审核状态</TableCell>
-            <TableCell>操作</TableCell>
+            <TableRow>
+              <TableCell>上传时间</TableCell>
+              <TableCell>机构</TableCell>
+              <TableCell>附件数量</TableCell>
+              <TableCell>审核状态</TableCell>
+              <TableCell>操作</TableCell>
+            </TableRow>
           </TableHead>
-          {data?.map((item) => (
-            <ItemRow
-              key={item.id}
-              {...item}
-              handleClick={() => setDialogData({ open: true, item })}
-            />
-          ))}
+          <TableBody>
+            {data?.map((item) => (
+              <ItemRow
+                key={item._id}
+                {...item}
+                handleClick={() => setDialogData({ open: true, item })}
+              />
+            ))}
+          </TableBody>
         </Table>
       </TableContainer>
       <Typography align="center">
@@ -128,7 +129,7 @@ function AssetDialog({
   const { mutate, isPending } = useCustomMutation(
     (item: CredentialTicket_Client) =>
       privateApi
-        .post(`/api/org/credential/${item._id}/update`, { state })
+        .patch(`/api/org/credential/${item._id}`, { state })
         .then(() => void 0)
   );
   const handleSubmit = () => {

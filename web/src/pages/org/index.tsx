@@ -22,10 +22,17 @@ import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import CancelOutlined from '@mui/icons-material/CancelOutlined';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { tCredentialState } from '@/utils/translate';
-import { orgDetailRoute } from './detail';
+import { orgDetailRoute } from './credentials';
 import { orgAssetsRoute } from './assets';
-import { createCredentialRoute } from './upload-credential';
-import { createAssetRoute } from './upload-asset';
+import { createCredentialRoute } from './credential-create';
+import { createAssetRoute } from './asset-create';
+import { creationsRoute } from './creations';
+import { campaignsRoute } from './campaigns';
+import { createCreationRoute } from './creation-create';
+import { creationDetailRoute } from './creation-detail';
+import { createCampaignRoute } from './campaign-create';
+import type { AssetTicket_Client } from '@shared/asset';
+import { campaignDetailRoute } from './campaign-detail';
 
 export const orgRoute: RouteObject = {
   path: '/org',
@@ -35,8 +42,14 @@ export const orgRoute: RouteObject = {
     { index: true, element: <Page /> },
     orgDetailRoute,
     orgAssetsRoute,
+    creationsRoute,
+    creationDetailRoute,
+    campaignsRoute,
+    campaignDetailRoute,
     createCredentialRoute,
     createAssetRoute,
+    createCreationRoute,
+    createCampaignRoute,
   ],
 };
 
@@ -44,7 +57,7 @@ function Page() {
   const orgId = useStoreSlice('user').profile!.orgId!;
   const orgQuery = useCustomQuery(['org', orgId], () =>
     privateApi
-      .get<Organization_Client>(`/api/org/${orgId}/item`)
+      .get<Organization_Client>(`/api/org/${orgId}`)
       .then((res) => res.data)
   );
   const isLoading = orgQuery.isLoading;
@@ -74,6 +87,9 @@ function Dashboard({
         </GridV2>
         <GridV2 xs={4}>
           <CredentialBlock {...orgData} />
+        </GridV2>
+        <GridV2 xs={6}>
+          <StatsBlock />
         </GridV2>
       </GridV2>
     </>
@@ -140,6 +156,61 @@ function CredentialBlock({ credential }: Organization_Client) {
         />
         <Typography>{text}</Typography>
       </Stack>
+    </Paper>
+  );
+}
+
+function StatsBlock() {
+  const orgId = useStoreSlice('user').profile!.orgId!;
+  const { data: assets, isLoading: isAssetsLoading } = useCustomQuery(
+    ['assets', orgId],
+    () =>
+      privateApi
+        .get<AssetTicket_Client[]>(`/api/ads/asset/list?orgId=${orgId}`)
+        .then((res) => res.data)
+  );
+  const { data: creations, isLoading: isCreationsLoading } = useCustomQuery(
+    ['creations', orgId],
+    () =>
+      privateApi
+        .get<AssetTicket_Client[]>(`/api/ads/creation/list?orgId=${orgId}`)
+        .then((res) => res.data)
+  );
+  const { data: campaigns, isLoading: isCampaignsLoading } = useCustomQuery(
+    ['campaigns', orgId],
+    () =>
+      privateApi
+        .get<AssetTicket_Client[]>(`/api/ads/campaign/list?orgId=${orgId}`)
+        .then((res) => res.data)
+  );
+
+  return (
+    <Paper elevation={2} sx={{ p: 2, height: 1 }}>
+      <Typography variant="h5">数据概览</Typography>
+      <Divider sx={{ my: 1 }} />
+      <List dense>
+        <ListItem>
+          {isAssetsLoading ? (
+            <Skeleton variant="rounded" />
+          ) : (
+            <ListItemText primary={`物料总数：${assets?.length}`} />
+          )}
+        </ListItem>
+        <ListItem>
+          {isCreationsLoading ? (
+            <Skeleton variant="rounded" />
+          ) : (
+            <ListItemText primary={`广告创意总数：${creations?.length}`} />
+          )}
+        </ListItem>
+        <ListItem>
+          {isCampaignsLoading ? (
+            <Skeleton variant="rounded" />
+          ) : (
+            <ListItemText primary={`投放计划总数：${campaigns?.length}`} />
+          )}
+        </ListItem>
+      </List>
     </Paper>
   );
 }

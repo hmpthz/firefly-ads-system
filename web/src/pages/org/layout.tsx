@@ -22,6 +22,8 @@ import BusinessIcon from '@mui/icons-material/Business';
 import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import LogoutIcon from '@mui/icons-material/Logout';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import ViewListIcon from '@mui/icons-material/ViewList';
 import { useCustomMutation } from '@/hooks/useCustomQuery';
 import { privateApi } from '@/utils/axios';
 
@@ -137,7 +139,17 @@ export function OrgDashboardLayout() {
             <DrawerButton
               to="/org/assets"
               text="物料列表"
+              icon={<ViewListIcon />}
+            />
+            <DrawerButton
+              to="/org/creations"
+              text="广告创意列表"
               icon={<SnippetFolderIcon />}
+            />
+            <DrawerButton
+              to="/org/campaigns"
+              text="投放计划列表"
+              icon={<EventNoteIcon />}
             />
             <Divider sx={{ my: 2 }} />
           </List>

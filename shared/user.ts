@@ -1,5 +1,3 @@
-import type { Timestamp_Client, Timestamp_Server } from './asset';
-
 export type UserRole = 'org.admin' | 'org.operator' | 'sys.xiaoer';
 
 interface UserProfile {
@@ -8,8 +6,7 @@ interface UserProfile {
   username: string;
   avatar: string;
 }
-export interface User_Client extends UserProfile, Timestamp_Client {
-  _id: string;
+export interface User_Client extends UserProfile, Timestamp_Client, _Id {
   orgId?: string;
 }
 export interface User_Server extends UserProfile, Timestamp_Server {

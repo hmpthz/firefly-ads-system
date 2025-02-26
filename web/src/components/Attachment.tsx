@@ -17,11 +17,12 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useMemo, useState, type JSX } from 'react';
 import type { SvgIconComponent } from '@mui/icons-material';
-import { RadioGroupControl } from './RHFInputs';
+import { RadioGroupControl } from './Inputs';
 import { contentTypes } from '@/utils/translate';
 
 export function FakeAttachment({
   name,
+  content,
   contentType,
   onDelete,
 }: Attachment & { onDelete?: () => void }) {
@@ -71,7 +72,7 @@ export function FakeAttachment({
     );
   } else {
     Icon = EditNoteIcon;
-    Display = <Typography variant="body2">{placeholderText}</Typography>;
+    Display = <Typography variant="body2">{content}</Typography>;
   }
 
   return (
@@ -108,16 +109,20 @@ export function FakeFileInput({
   onAdd: (a: Attachment) => void;
 }) {
   const [name, setName] = useState('');
-  const [contentType, setContentType] = useState<AttachmentType>('text');
+  const [content, setContent] = useState('');
+  const [contentType, setContentType] = useState<AttachmentType>(
+    filter ? filter[0] : 'text'
+  );
   const handleAdd = () => {
-    if (name != '') {
-      onAdd({ name, contentType });
+    if (name && content) {
+      onAdd({ name, content, contentType });
       setName('');
+      setContent('');
     }
   };
 
   return (
-    <Box>
+    <Stack gap={1}>
       <TextField
         variant="outlined"
         type="text"
@@ -127,9 +132,19 @@ export function FakeFileInput({
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
+      <TextField
+        variant="outlined"
+        type="text"
+        label="物料内容"
+        placeholder="文字，或文件URL等......"
+        autoComplete="off"
+        fullWidth
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+      />
       <Stack
         direction="row"
-        sx={{ mt: 1, alignItems: 'center', justifyContent: 'space-between' }}
+        sx={{ alignItems: 'center', justifyContent: 'space-between' }}
       >
         <RadioGroupControl
           row
@@ -147,7 +162,7 @@ export function FakeFileInput({
           添加
         </Button>
       </Stack>
-    </Box>
+    </Stack>
   );
 }
 
