@@ -1,6 +1,20 @@
 import type { AttachmentType, TicketState } from '@shared/asset';
 import type { PricingModel } from '@shared/campaign';
 
+export const adResources = ['campaign', 'unit', 'creation', 'asset'] as const;
+export type AdResourceType = (typeof adResources)[number];
+
+export function tAdResource(resource: AdResourceType): string {
+  return (
+    {
+      campaign: '广告投放计划',
+      unit: '广告投放单元',
+      creation: '广告创意工单',
+      asset: '物料工单',
+    } as Record<AdResourceType, string>
+  )[resource];
+}
+
 export function tTicketState(state: TicketState): string {
   return (
     {

@@ -1,5 +1,15 @@
 import WhatshotIcon from '@mui/icons-material/Whatshot';
-import { Box, Link, styled, Typography, type LinkProps } from '@mui/material';
+import {
+  Box,
+  DialogTitle,
+  Dialog,
+  Link,
+  styled,
+  Typography,
+  type LinkProps,
+  DialogActions,
+  Button,
+} from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import { useNavigate } from 'react-router-dom';
 
@@ -53,3 +63,31 @@ export const GoBack = ({ onClick }: { onClick?: () => void }) => {
 };
 
 export const AppBarOffset = styled('div')(({ theme }) => theme.mixins.toolbar);
+
+export function ConfirmDialog({
+  open,
+  title,
+  disabled,
+  handleConfirm,
+  handleClose,
+}: {
+  open: boolean;
+  title: string;
+  disabled: boolean;
+  handleConfirm: () => void;
+  handleClose: () => void;
+}) {
+  return (
+    <Dialog open={open} onClose={handleClose} scroll="paper">
+      <DialogTitle>{title}</DialogTitle>
+      <DialogActions>
+        <Button disabled={disabled} onClick={handleClose}>
+          取消
+        </Button>
+        <Button disabled={disabled} onClick={handleConfirm}>
+          确认
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}

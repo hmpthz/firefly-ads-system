@@ -14,10 +14,10 @@ import {
 } from '@/models/creation.model.js';
 import type {
   NewCreationFormData,
-  UpdateCreationFormData,
   UpdateCreationTicketFormData,
 } from '@shared/creation.js';
 import { createAssetItem } from './asset.controller.js';
+import { adUnitModel } from '@/models/campaign.model.js';
 
 export const getCreationList: AuthHandler<
   object,
@@ -65,7 +65,7 @@ export const getCreation: AuthHandler<object, ReqParam<'id'>>[] = [
   },
 ];
 
-export const getCreationByName: AuthHandler<
+export const findCreationByName: AuthHandler<
   object,
   object,
   ReqParam<'name'>
@@ -89,7 +89,7 @@ export const createCreation: AuthSessionHandler<NewCreationFormData>[] = [
       return next(HandledError.list['req|wrong_orgid|404']);
     }
 
-    const { assets, ...data } = req.body;
+    const { unitName, assets, ...data } = req.body;
     const assetsId: Record<string, mongoose.Types.ObjectId> = {};
     for (const [key, val] of Object.entries(assets)) {
       if (typeof val == 'string') {
@@ -107,29 +107,76 @@ export const createCreation: AuthSessionHandler<NewCreationFormData>[] = [
     const newItem = new adCreationTicketModel({
       org: org._id,
       state: 'pending',
+      active: false,
       assets: assetsId,
       ...data,
     });
     await newItem.save();
+
+    if (unitName) {
+      const toBound = await adUnitModel.findOne({ name: unitName });
+      if (!toBound) {
+        return next(HandledError.list['req|wrong_name|404']);
+      }
+      toBound.creations.push(newItem._id);
+      await toBound.save();
+    }
     res.status(201).json(newItem.toJSON());
   },
 ];
 
 export const updateCreation: AuthHandler<
-  UpdateCreationFormData,
+  Partial<NewCreationFormData>,
   ReqParam<'id'>
 >[] = [
   authHandler(),
   async (req, res, next) => {
     const found = await adCreationTicketModel
       .findById(req.params.id)
-      .populate<AdCreationTicket_Populated>('assets.$*');
+      .populate<AdCreationTicket_Populated>(['assets.$*', 'org']);
     if (!found) {
       return next(HandledError.list['param|wrong_id|404']);
     }
 
     const { assets, ...data } = req.body;
-    for (const [key, val] of Object.entries(assets)) {
+
+    // 如果要激活创意投放，需要检查所有assets的状态是否为approved
+    if (data.active === true) {
+      // 检查创意本身状态
+      if (found.state !== 'approved') {
+        return next(
+          new HandledError('forbidden', '创意未通过审核，不能开始投放', 403)
+        );
+      }
+
+      // 检查所有物料状态
+      let allAssetsApproved = true;
+      for (const asset of found.assets.values()) {
+        if (asset.state !== 'approved') {
+          allAssetsApproved = false;
+          break;
+        }
+      }
+
+      if (!allAssetsApproved) {
+        return next(
+          new HandledError(
+            'forbidden',
+            '存在未通过审核的物料，不能开始投放',
+            403
+          )
+        );
+      }
+    }
+
+    for (const [key, val] of Object.entries(assets || {})) {
+      const oldAsset = found.assets.get(key);
+      if (val === oldAsset?.id) continue;
+      // 删除旧物料
+      if (oldAsset) {
+        await oldAsset.deleteOne();
+      }
+      // 添加新物料
       if (typeof val == 'string') {
         const foundAsset = await assetTicketModel.findById(val);
         if (!foundAsset) {
@@ -138,13 +185,27 @@ export const updateCreation: AuthHandler<
         // @ts-expect-error
         found.assets.set(key, foundAsset._id);
       } else {
-        // 原地更新物料信息
-        const item = found.assets.get(key);
-        if (!item) continue;
-        item.$set(val);
-        await item.save();
+        // 创建新物料
+        const newItem = await createAssetItem(found.org._id, val);
+        // @ts-expect-error
+        found.assets.set(key, newItem._id);
       }
     }
+
+    // 如果更新修改了active以外的字段，则停止投放
+    if ('active' in data && found.active !== data.active) {
+      // 只更新活跃状态
+      found.active = data.active;
+    } else if (
+      Object.keys(data).length > 0 &&
+      'active' in data === false &&
+      found.active
+    ) {
+      // 如果更新了其他字段且当前处于活跃状态，则停止投放
+      found.active = false;
+      data.active = false;
+    }
+
     found.set(data);
     await found.save();
     res.status(200).end();

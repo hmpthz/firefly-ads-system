@@ -30,7 +30,7 @@ const adCampaignSchema = new mongoose.Schema<AdCampaign>(
     },
     timeRange: {
       type: [String],
-      required: true,
+      // required: true,
     },
     pricingModel: {
       type: String,
@@ -39,6 +39,9 @@ const adCampaignSchema = new mongoose.Schema<AdCampaign>(
     budget: {
       type: Number,
       required: true,
+    },
+    active: {
+      type: Boolean,
     },
     // @ts-expect-error
     org: { type: mongoose.Types.ObjectId, ref: 'Organization', required: true },
@@ -98,9 +101,16 @@ const adUnitSchema = new mongoose.Schema<AdUnit>(
         required: true,
       },
     },
+    expectedImpressions: {
+      type: Number,
+      required: true,
+    },
     features: {
       type: [String],
       required: true,
+    },
+    active: {
+      type: Boolean,
     },
     // @ts-expect-error
     org: { type: mongoose.Types.ObjectId, ref: 'Organization', required: true },

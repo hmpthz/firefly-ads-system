@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { connectDatabase } from './utils/db.js';
+import './utils/extend.js';
 
 function main() {
   const app = express();

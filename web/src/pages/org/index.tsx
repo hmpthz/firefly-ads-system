@@ -22,18 +22,17 @@ import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import CancelOutlined from '@mui/icons-material/CancelOutlined';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { tCredentialState } from '@/utils/translate';
-import { orgDetailRoute } from './credentials';
-import { orgAssetsRoute } from './assets';
-import { createCredentialRoute } from './credential-create';
-import { createAssetRoute } from './asset-create';
-import { creationsRoute } from './creations';
-import { campaignsRoute } from './campaigns';
-import { createCreationRoute } from './creation-create';
-import { creationDetailRoute } from './creation-detail';
-import { createCampaignRoute } from './campaign-create';
 import type { AssetTicket_Client } from '@shared/asset';
+import { orgDetailRoute } from './credentials';
+import { credentialCreateRoute } from './credential-create';
+import { assetCreateRoute } from './asset-create';
+import { creationCreateRoute } from './creation-create';
+import { creationDetailRoute } from './creation-detail';
+import { unitCreateRoute } from './unit-create';
+import { unitDetailRoute } from './unit-detail';
+import { campaignCreateRoute } from './campaign-create';
 import { campaignDetailRoute } from './campaign-detail';
-
+import { resourcesRoute } from './resources';
 export const orgRoute: RouteObject = {
   path: '/org',
   id: 'org-index',
@@ -41,15 +40,15 @@ export const orgRoute: RouteObject = {
   children: [
     { index: true, element: <Page /> },
     orgDetailRoute,
-    orgAssetsRoute,
-    creationsRoute,
-    creationDetailRoute,
-    campaignsRoute,
+    credentialCreateRoute,
+    resourcesRoute,
     campaignDetailRoute,
-    createCredentialRoute,
-    createAssetRoute,
-    createCreationRoute,
-    createCampaignRoute,
+    campaignCreateRoute,
+    unitDetailRoute,
+    unitCreateRoute,
+    creationDetailRoute,
+    creationCreateRoute,
+    assetCreateRoute,
   ],
 };
 

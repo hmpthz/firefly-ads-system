@@ -4,6 +4,7 @@ import {
   DialogTitle,
   FormControl,
   FormControlLabel,
+  FormLabel,
   InputAdornment,
   InputLabel,
   MenuItem,
@@ -94,12 +95,18 @@ export const RHFSelect = <T extends FieldValues, P extends Path<T>>({
 export const RadioGroupControl = ({
   disabled,
   labels,
+  text,
   ...props
 }: RadioGroupProps & {
   disabled?: boolean;
   labels: [string, string][] | Record<string, string>;
+  text?: string;
 }) => (
-  <FormControl disabled={disabled}>
+  <FormControl
+    disabled={disabled}
+    sx={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
+  >
+    {text && <FormLabel>{text}</FormLabel>}
     <RadioGroup {...props}>
       {(Array.isArray(labels) ? labels : Object.entries(labels)).map(
         ([value, label]) => (

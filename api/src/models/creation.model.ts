@@ -26,6 +26,10 @@ const adCreationTicketSchema = new mongoose.Schema<AdCreationTicket>(
       type: String,
       required: true,
     },
+    active: {
+      type: Boolean,
+      default: false,
+    },
     // @ts-expect-error
     org: { type: mongoose.Types.ObjectId, ref: 'Organization', required: true },
     assets: {

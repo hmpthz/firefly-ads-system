@@ -24,14 +24,12 @@ import { privateApi } from '@/utils/axios';
 import { useCustomMutation, useCustomQuery } from '@/hooks/useCustomQuery';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PublishIcon from '@mui/icons-material/Publish';
-import {
-  tCredentialState,
-} from '@/utils/translate';
+import { tCredentialState } from '@/utils/translate';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { FakeAttachment } from '@/components/Attachment';
 import { useState } from 'react';
-import { RadioGroupControl } from '@/components/Inputs';
 import type { CredentialTicket_Client } from '@shared/org';
+import { TickeStateRadioGroup, type DialogData } from '@/components/Asset';
 
 export const sysCredentialsRoute: RouteObject = {
   path: 'credentials',
@@ -45,7 +43,9 @@ function Page() {
       .get<CredentialTicket_Client[]>(`/api/org/credential/list`)
       .then((res) => res.data)
   );
-  const [dialogData, setDialogData] = useState<DialogData>({ open: false });
+  const [dialogData, setDialogData] = useState<
+    DialogData<CredentialTicket_Client>
+  >({ open: false });
   const closeDialog = () => {
     refetch();
     setDialogData((prev) => ({ ...prev, open: false }));
@@ -89,7 +89,7 @@ function Page() {
       <Typography align="center">
         {isLoading ? <CircularProgress /> : null}
       </Typography>
-      <AssetDialog data={dialogData} handleClose={closeDialog} />
+      <CredentialDialog data={dialogData} handleClose={closeDialog} />
     </Paper>
   );
 }
@@ -114,15 +114,11 @@ const ItemRow = ({
   </TableRow>
 );
 
-type DialogData = {
-  open: boolean;
-  item?: CredentialTicket_Client;
-};
-function AssetDialog({
+function CredentialDialog({
   data: { open, item },
   handleClose,
 }: {
-  data: DialogData;
+  data: DialogData<CredentialTicket_Client>;
   handleClose: () => void;
 }) {
   const [state, setState] = useState<TicketState>('in-progress');
@@ -147,20 +143,7 @@ function AssetDialog({
             <FakeAttachment key={a.name} {...a} />
           ))}
         </Stack>
-        <RadioGroupControl
-          row
-          name="ticketState"
-          sx={{ gap: 0 }}
-          value={state}
-          onChange={(_, val) => setState(val as TicketState)}
-          labels={
-            {
-              'in-progress': '进行中',
-              approved: '通过',
-              declined: '拒绝',
-            } as Record<TicketState, string>
-          }
-        />
+        <TickeStateRadioGroup value={state} setState={setState} />
       </DialogContent>
       <DialogActions>
         <Button

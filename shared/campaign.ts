@@ -5,9 +5,10 @@ export type PricingModel = 'cpm' | 'cpc' | 'cpt';
 interface AdCampaign {
   name: string;
   dateRange: { from: string; to: string };
-  timeRange: string[];
+  timeRange: string[] | null;
   pricingModel: PricingModel;
   budget: number;
+  active?: boolean;
 }
 
 export type AdCampaign_Client = AdCampaign &
@@ -26,7 +27,9 @@ interface AdUnit {
     city: string;
   }[];
   ages: { from: number; to: number };
+  expectedImpressions: number;
   features: string[];
+  active?: boolean;
 }
 
 export type AdUnit_Client = AdUnit &
@@ -37,20 +40,13 @@ export type AdUnit_Client = AdUnit &
   };
 export type AdUnit_Server = AdUnit & Timestamp_Server;
 
-export type NewCampaignFormData = AdCampaign & { units: NewUnitFormData[] };
+export type NewCampaignFormData = AdCampaign & {
+  /** 将已创建的广告单元Id绑定到广告投放计划 */
+  units: string[];
+};
 export type NewUnitFormData = AdUnit & {
-  /** 先创建广告创意或使用原有的，然后将它们Id绑定倒新的广告单元 */
+  /** 绑定的广告投放计划名称 */
+  campaignName?: string;
+  /** 将已创建的广告创意Id绑定到广告投放单元 */
   creations: string[];
-};
-
-export type UpdateCampaignFormData = Partial<AdCampaign> & {
-  /** 创建或删除广告单元 */
-  units: (
-    | { op: 'new'; id?: undefined; data: NewUnitFormData }
-    | { op: 'delete'; id: string; data?: undefined }
-  )[];
-};
-export type UpdateUnitFormData = Partial<AdUnit> & {
-  /** 创建或删除广告创意 */
-  creations: { op: 'new' | 'delete'; id: string }[];
 };

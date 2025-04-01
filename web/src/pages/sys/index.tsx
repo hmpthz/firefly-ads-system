@@ -18,6 +18,7 @@ import type { AssetTicket_Client } from '@shared/asset';
 import { useMemo } from 'react';
 import { sysAssetsRoute } from './assets';
 import { sysCredentialsRoute } from './credentials';
+import { sysCreationsRoute } from './creations';
 
 export const sysRoute: RouteObject = {
   path: '/sys',
@@ -26,6 +27,7 @@ export const sysRoute: RouteObject = {
     { index: true, element: <Page /> },
     sysAssetsRoute,
     sysCredentialsRoute,
+    sysCreationsRoute,
   ],
 };
 

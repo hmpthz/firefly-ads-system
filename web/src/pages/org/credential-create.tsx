@@ -15,7 +15,7 @@ import { useState, type FormEventHandler } from 'react';
 import { useNavigate, type RouteObject } from 'react-router-dom';
 import { GoBack } from '@/components/UI';
 
-export const createCredentialRoute: RouteObject = {
+export const credentialCreateRoute: RouteObject = {
   path: 'create-credential',
   element: <Page />,
 };

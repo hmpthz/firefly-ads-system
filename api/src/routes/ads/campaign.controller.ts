@@ -8,12 +8,7 @@ import { HandledError } from '@/utils/errors.js';
 import mongoose from 'mongoose';
 import type { User_Populated } from '@/models/user.model.js';
 import { adCampaignModel, adUnitModel } from '@/models/campaign.model.js';
-import type {
-  NewCampaignFormData,
-  NewUnitFormData,
-  UpdateCampaignFormData,
-  UpdateUnitFormData,
-} from '@shared/campaign.js';
+import type { NewCampaignFormData } from '@shared/campaign.js';
 
 export const getCampaignList: AuthHandler<object, object, ReqParam<'orgId'>>[] =
   [
@@ -42,33 +37,6 @@ export const getCampaign: AuthHandler<object, ReqParam<'id'>>[] = [
   },
 ];
 
-export const getUnit: AuthHandler<object, ReqParam<'id'>>[] = [
-  authHandler(),
-  async (req, res, next) => {
-    const found = await adUnitModel
-      .findById(req.params.id)
-      .populate('creations');
-    if (!found) {
-      return next(HandledError.list['param|wrong_id|404']);
-    }
-    res.json(found.toJSON()).status(200);
-  },
-];
-
-async function createUnitItem(
-  org: mongoose.Types.ObjectId,
-  data: NewUnitFormData
-) {
-  const { creations, ...rest } = data;
-  const newItem = new adUnitModel({
-    org,
-    creations: creations.map((id) => new mongoose.Types.ObjectId(id)),
-    ...rest,
-  });
-  await newItem.save();
-  return newItem;
-}
-
 export const createCampaign: AuthSessionHandler<NewCampaignFormData>[] = [
   authHandler(),
   userFinder(true),
@@ -79,15 +47,10 @@ export const createCampaign: AuthSessionHandler<NewCampaignFormData>[] = [
     }
 
     const { units, ...data } = req.body;
-    const unitsId: mongoose.Types.ObjectId[] = [];
-    for (const data of units) {
-      const newItem = await createUnitItem(org._id, data);
-      unitsId.push(newItem._id);
-    }
 
     const newItem = new adCampaignModel({
       org: org._id,
-      units: unitsId,
+      units: units.map((id) => new mongoose.Types.ObjectId(id)),
       ...data,
     });
     await newItem.save();
@@ -96,7 +59,7 @@ export const createCampaign: AuthSessionHandler<NewCampaignFormData>[] = [
 ];
 
 export const updateCampaign: AuthHandler<
-  UpdateCampaignFormData,
+  Partial<NewCampaignFormData>,
   ReqParam<'id'>
 >[] = [
   authHandler(),
@@ -106,39 +69,30 @@ export const updateCampaign: AuthHandler<
       return next(HandledError.list['param|wrong_id|404']);
     }
 
-    const { units, ...data } = req.body;
-    for (const unitUpdate of units) {
-      if (unitUpdate.op == 'new') {
-        const newItem = await createUnitItem(found.org, unitUpdate.data);
-        found.units.push(newItem._id);
-      } else {
-        await adUnitModel.findByIdAndDelete(unitUpdate.id);
-        found.units.pull(unitUpdate.id);
-      }
-    }
-    found.set(data);
-    await found.save();
-    res.status(200).end();
-  },
-];
+    const { units: newUnitIds, ...data } = req.body;
+    const updateData: Partial<Omit<NewCampaignFormData, 'units'>> & {
+      units?: mongoose.Types.ObjectId[];
+    } = { ...data };
 
-export const updateUnit: AuthHandler<UpdateUnitFormData, ReqParam<'id'>>[] = [
-  authHandler(),
-  async (req, res, next) => {
-    const found = await adUnitModel.findById(req.params.id);
-    if (!found) {
-      return next(HandledError.list['param|wrong_id|404']);
+    if (newUnitIds) {
+      // 找出需要删除的单元（在原列表中但不在新列表中的单元）
+      const oldUnitIds = found.units.map((id) => id.toString());
+      const unitsToDelete = oldUnitIds.filter((id) => !newUnitIds.includes(id));
+      // 删除不再使用的单元
+      await Promise.all(
+        unitsToDelete.map((id) => adUnitModel.findByIdAndDelete(id))
+      );
+      updateData.units = newUnitIds.map(
+        (id) => new mongoose.Types.ObjectId(id)
+      );
     }
 
-    const { creations, ...data } = req.body;
-    for (const { op, id } of creations) {
-      if (op == 'new') {
-        found.creations.push(new mongoose.Types.ObjectId(id));
-      } else {
-        found.creations.pull(id);
-      }
+    if (found.active === updateData.active) {
+      // 没有更新状态，而是修改了其他字段
+      // 停止投放
+      updateData.active = false;
     }
-    found.set(data);
+    found.set(updateData);
     await found.save();
     res.status(200).end();
   },

@@ -4,11 +4,13 @@ import { Provider, useDispatch, useSelector } from 'react-redux';
 import { userActions, userReducer } from './userSlice';
 import { PersistGate } from 'redux-persist/integration/react';
 import { popupActions, popupReducer } from './popupSlice';
+import { timeSeriesActions, timeSeriesReducer } from './timeSeriesSlice';
 
 const _store = configureStore({
   reducer: {
     user: userReducer,
     popup: popupReducer,
+    timeSeries: timeSeriesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -35,6 +37,7 @@ export function useStoreActions() {
     dispatch,
     userActions,
     popupActions,
+    timeSeriesActions,
   };
 }
 
@@ -43,4 +46,5 @@ export const store = {
   dispatch: _store.dispatch,
   userActions,
   popupActions,
+  timeSeriesActions,
 };

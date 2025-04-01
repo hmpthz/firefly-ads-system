@@ -30,16 +30,17 @@ export const getAssetList: AuthHandler<
   },
 ];
 
-export const getAssetByName: AuthHandler<object, object, ReqParam<'name'>>[] = [
-  authHandler(),
-  async (req, res, next) => {
-    const found = await assetTicketModel.findOne({ name: req.query.name });
-    if (!found) {
-      return next(HandledError.list['req|wrong_name|404']);
-    }
-    res.json(found.toJSON()).status(200);
-  },
-];
+export const findAssetByName: AuthHandler<object, object, ReqParam<'name'>>[] =
+  [
+    authHandler(),
+    async (req, res, next) => {
+      const found = await assetTicketModel.findOne({ name: req.query.name });
+      if (!found) {
+        return next(HandledError.list['req|wrong_name|404']);
+      }
+      res.json(found.toJSON()).status(200);
+    },
+  ];
 
 export async function createAssetItem(
   org: mongoose.Types.ObjectId,

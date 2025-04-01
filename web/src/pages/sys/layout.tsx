@@ -45,6 +45,11 @@ export function SysDashboardLayout() {
               text="物料列表"
               icon={<SnippetFolderIcon />}
             />
+            <DrawerButton
+              to="/sys/creations"
+              text="广告创意列表"
+              icon={<SnippetFolderIcon />}
+            />
             <Divider sx={{ my: 2 }} />
           </List>
           <ProfileBox />

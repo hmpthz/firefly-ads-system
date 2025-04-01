@@ -14,7 +14,7 @@ export function SelectableTimeTable({
   setTimeRange,
 }: {
   timeRange: string[];
-  setTimeRange?: (cb: (timeRange: string[]) => string[]) => void;
+  setTimeRange?: (timeRange: string[]) => void;
 }) {
   // 生成小时数组 (00:00 - 23:00)
   const hours = Array.from(
@@ -32,8 +32,8 @@ export function SelectableTimeTable({
       value={timeRange}
       dragContainer={() => document.getElementById('time-table')!}
       onEnd={(_selectingValue, { added, removed }) => {
-        setTimeRange?.((prev) =>
-          prev.concat(added).filter((i) => !removed.includes(i))
+        setTimeRange?.(
+          timeRange.concat(added).filter((i) => !removed.includes(i))
         );
       }}
     >

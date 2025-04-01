@@ -10,6 +10,7 @@ export type TemplateData = {
   exampleImage: string;
   assets: Record<string, TemplateAsset>;
   component: React.FC<TemplateProps>;
+  price: number; // 刊例价
 };
 
 export const templatesData: Record<string, TemplateData> = {
@@ -22,6 +23,7 @@ export const templatesData: Record<string, TemplateData> = {
       subtitle: { name: '副标题', type: 'text' },
     },
     component: Horizontal_1,
+    price: 150,
   },
   'vertical-1': {
     name: '竖版1（533x800）',
@@ -33,6 +35,7 @@ export const templatesData: Record<string, TemplateData> = {
       hint: { name: '描述', type: 'text' },
     },
     component: Vertical_1,
+    price: 200,
   },
 };
 export const templatesName = Object.fromEntries(

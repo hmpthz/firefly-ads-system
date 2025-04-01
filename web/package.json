@@ -18,6 +18,8 @@
     "@reduxjs/toolkit": "^2.2.7",
     "@tanstack/react-query": "^5.66.0",
     "axios": "^1.7.7",
+    "echarts": "^5.6.0",
+    "echarts-for-react": "^3.0.2",
     "react": "^18.3.1",
     "react-day-picker": "^9.5.1",
     "react-dom": "^18.3.1",

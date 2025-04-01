@@ -166,7 +166,6 @@ function CredentialList() {
           上传
         </Button>
       </Box>
-      <Typography variant="h5"></Typography>
       <Divider sx={{ my: 1 }} />
       <TableContainer>
         <Table>

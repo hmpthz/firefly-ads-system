@@ -23,14 +23,11 @@ import { privateApi } from '@/utils/axios';
 import { useCustomMutation, useCustomQuery } from '@/hooks/useCustomQuery';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PublishIcon from '@mui/icons-material/Publish';
-import {
-  tContentType,
-  tCredentialState,
-} from '@/utils/translate';
+import { tContentType, tCredentialState } from '@/utils/translate';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { FakeAttachment } from '@/components/Attachment';
 import { useState } from 'react';
-import { RadioGroupControl } from '@/components/Inputs';
+import { TickeStateRadioGroup, type DialogData } from '@/components/Asset';
 
 export const sysAssetsRoute: RouteObject = {
   path: 'assets',
@@ -44,7 +41,9 @@ function Page() {
       .get<AssetTicket_Client[]>(`/api/ads/asset/list`)
       .then((res) => res.data)
   );
-  const [dialogData, setDialogData] = useState<DialogData>({ open: false });
+  const [dialogData, setDialogData] = useState<DialogData<AssetTicket_Client>>({
+    open: false,
+  });
   const closeDialog = () => {
     refetch();
     setDialogData((prev) => ({ ...prev, open: false }));
@@ -116,15 +115,11 @@ const ItemRow = ({
   </TableRow>
 );
 
-type DialogData = {
-  open: boolean;
-  item?: AssetTicket_Client;
-};
 function AssetDialog({
   data: { open, item },
   handleClose,
 }: {
-  data: DialogData;
+  data: DialogData<AssetTicket_Client>;
   handleClose: () => void;
 }) {
   const [state, setState] = useState<TicketState>('in-progress');
@@ -142,20 +137,7 @@ function AssetDialog({
       <DialogTitle>{item.org.name}</DialogTitle>
       <DialogContent>
         <FakeAttachment {...item} />
-        <RadioGroupControl
-          row
-          name="ticketState"
-          sx={{ gap: 0 }}
-          value={state}
-          onChange={(_, val) => setState(val as TicketState)}
-          labels={
-            {
-              'in-progress': '进行中',
-              approved: '通过',
-              declined: '拒绝',
-            } as Record<TicketState, string>
-          }
-        />
+        <TickeStateRadioGroup value={state} setState={setState} />
       </DialogContent>
       <DialogActions>
         <Button
