@@ -34,6 +34,13 @@ import { tCredentialState, tTicketState } from '@/utils/translate';
 import { templatesData, templatesName } from '@/components/Templates';
 import { GoBack } from './UI';
 import { setPopupError } from '@/utils/error';
+import {
+  useCreationTimeSeries,
+  creationTimeDataToXML,
+  downloadXML,
+} from '@/hooks/useTimeSeries';
+import { ChartsControl, LineChart } from './ChartComponents';
+import type { TimeScale } from '@/store/timeSeriesSlice';
 
 export function AdCreationsList() {
   const navigate = useNavigate();
@@ -108,32 +115,143 @@ export function AdCreationRow({
 
 const Paragraph = styled(Typography)(() => ({ fontSize: 18 }));
 
-export function AdCreationDetail({
-  name,
-  state,
-  template,
-  assets,
-  createdAt,
-  active,
-}: AdCreationTicket_Client) {
+export function AdCreationDetail(data: AdCreationTicket_Client) {
+  const { name, state, template, assets, createdAt, active } = data;
   const templateData = templatesData[template];
   const Preview = templateData.component;
 
+  const [timeScale, setTimeScale] = useState<TimeScale>('daily');
+  const [showCharts, setShowCharts] = useState<boolean>(true);
+
+  const timeSeries = useCreationTimeSeries(data, timeScale);
+
+  const getImpressionsSeries = () => {
+    if (!timeSeries) {
+      return [];
+    }
+
+    return [
+      {
+        name: '曝光次数',
+        data: timeSeries.map((item) => ({
+          time: item.time,
+          value: item.impressions,
+        })),
+        color: '#1976d2',
+      },
+    ];
+  };
+
+  const getClicksSeries = () => {
+    if (!timeSeries) {
+      return [];
+    }
+
+    return [
+      {
+        name: '点击次数',
+        data: timeSeries.map((item) => ({
+          time: item.time,
+          value: item.clicks,
+        })),
+        color: '#ff9800',
+      },
+    ];
+  };
+
+  const getCTRSeries = () => {
+    if (!timeSeries) {
+      return [];
+    }
+
+    return [
+      {
+        name: '点击率',
+        data: timeSeries.map((item) => ({
+          time: item.time,
+          value: item.ctr,
+        })),
+        color: '#4caf50',
+      },
+    ];
+  };
+
+  // 处理XML数据下载
+  const handleDownloadXML = () => {
+    if (!timeSeries) return;
+
+    const xmlContent = creationTimeDataToXML(name, timeSeries);
+    const fileName = `creation_${name}_${timeScale}_${new Date()
+      .toISOString()
+      .slice(0, 10)}.xml`;
+    downloadXML(xmlContent, fileName);
+  };
+
   return (
     <Stack spacing={2} sx={{ width: 1, maxWidth: 520, mb: 4 }}>
+      <ChartsControl
+        show={showCharts}
+        setShow={setShowCharts}
+        onDownload={handleDownloadXML}
+        loading={!timeSeries}
+      />
+
       <Paragraph>创意名称：{name}</Paragraph>
       <Paragraph>创建时间：{createdAt}</Paragraph>
       <Paragraph>审核状态：{tTicketState(state)}</Paragraph>
       <Paragraph>投放状态：{active ? '已开始投放' : '未开始投放'}</Paragraph>
       <Paragraph>创意模板：{templateData.name}</Paragraph>
       <Paragraph>刊例价：{templateData.price} 元</Paragraph>
+
+      {showCharts ? (
+        <>
+          <Box sx={{ py: 3 }}>
+            <LineChart
+              title="曝光次数走势"
+              timeScale={timeScale}
+              setTimeScale={setTimeScale}
+              series={getImpressionsSeries()}
+              yAxisName="曝光次数"
+              loading={!timeSeries}
+              width="800px"
+              height="350px"
+            />
+          </Box>
+
+          <Box sx={{ py: 3 }}>
+            <LineChart
+              title="点击次数走势"
+              timeScale={timeScale}
+              setTimeScale={setTimeScale}
+              series={getClicksSeries()}
+              yAxisName="点击次数"
+              loading={!timeSeries}
+              width="800px"
+              height="350px"
+            />
+          </Box>
+
+          <Box sx={{ py: 3 }}>
+            <LineChart
+              title="点击率走势"
+              timeScale={timeScale}
+              setTimeScale={setTimeScale}
+              series={getCTRSeries()}
+              yAxisName="点击率(%)"
+              loading={!timeSeries}
+              width="800px"
+              height="350px"
+            />
+          </Box>
+        </>
+      ) : null}
+
       <Divider />
       {Object.entries(templateData.assets).map(([key, data]) => (
         <PreviewEdit key={key} {...data} preview={assets[key]} />
       ))}
       <Divider />
       <Preview {...assets} />
-      <Divider />
     </Stack>
   );
 }

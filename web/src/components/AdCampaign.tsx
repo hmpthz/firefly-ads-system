@@ -30,6 +30,18 @@ import { RadioGroupControl, DateRangePicker, RHFSelect } from './Inputs';
 import { GoBack } from './UI';
 import { RHFTextField } from './Inputs';
 import { SelectableTimeTable } from './TimeTable';
+import {
+  useCampaignUnitsTimeSeries,
+  campaignUnitsTimeDataToXML,
+  downloadXML,
+} from '@/hooks/useTimeSeries';
+import {
+  ChartsControl,
+  getColorByIndex,
+  LineChart,
+  PieChart,
+} from './ChartComponents';
+import type { TimeScale } from '@/store/timeSeriesSlice';
 
 export function AdCampaignsList() {
   const orgId = useStoreSlice('user').profile!.orgId!;
@@ -142,20 +154,89 @@ function ItemCard({
 
 const Paragraph = styled(Typography)(() => ({ fontSize: 18 }));
 
-export function AdCampaignDetail({
-  name,
-  createdAt,
-  pricingModel,
-  budget,
-  active,
-  dateRange,
-  timeRange,
-  units,
-}: AdCampaign_Client) {
+export function AdCampaignDetail(data: AdCampaign_Client) {
+  const {
+    name,
+    createdAt,
+    pricingModel,
+    budget,
+    active,
+    dateRange,
+    timeRange,
+    units,
+  } = data;
   const navigate = useNavigate();
+
+  const [timeScale, setTimeScale] = useState<TimeScale>('daily');
+  const [showCharts, setShowCharts] = useState<boolean>(true);
+
+  const timeSeries = useCampaignUnitsTimeSeries(data, timeScale);
+
+  const getBudgetConsumptionSeries = () => {
+    if (!timeSeries || !timeSeries.campaign) {
+      return [];
+    }
+
+    return [
+      {
+        name: '预算消耗率',
+        data: timeSeries.campaign.map((item) => ({
+          time: item.time,
+          value: item.consumptionRate,
+        })),
+        color: '#1976d2',
+      },
+    ];
+  };
+
+  const getUnitImpressionsPieData = () => {
+    if (!timeSeries || !timeSeries.units) {
+      return [];
+    }
+
+    return timeSeries.units.map((unitData, index) => {
+      if (!unitData || unitData.length === 0) {
+        return {
+          name: units[index]?.name || `单元 ${index + 1}`,
+          value: 0,
+        };
+      }
+
+      return {
+        name: units[index]?.name || `单元 ${index + 1}`,
+        value: unitData[0]?.impressions || 0,
+        color: getColorByIndex(index),
+      };
+    });
+  };
+
+  // 处理XML数据下载
+  const handleDownloadXML = () => {
+    if (!timeSeries) return;
+
+    const unitNames = units.map((unit) => unit.name);
+    const xmlContent = campaignUnitsTimeDataToXML(
+      name,
+      timeSeries.campaign,
+      timeSeries.units,
+      unitNames
+    );
+
+    const fileName = `campaign_${name}_${timeScale}_${new Date()
+      .toISOString()
+      .slice(0, 10)}.xml`;
+    downloadXML(xmlContent, fileName);
+  };
 
   return (
     <Stack spacing={2} sx={{ width: 1, maxWidth: 520, mb: 4 }}>
+      <ChartsControl
+        show={showCharts}
+        setShow={setShowCharts}
+        onDownload={handleDownloadXML}
+        loading={!timeSeries}
+      />
+
       <Paragraph>计划名称：{name}</Paragraph>
       <Paragraph>创建时间：{createdAt}</Paragraph>
       <Paragraph>投放状态：{active ? '已开始投放' : '未开始投放'}</Paragraph>
@@ -164,8 +245,32 @@ export function AdCampaignDetail({
       <Paragraph>
         投放日期范围：{`${dateRange.from} ~ ${dateRange.to}`}
       </Paragraph>
+      {timeRange && (
+        <>
+          <Paragraph>投放时间范围：</Paragraph>
+          <SelectableTimeTable timeRange={timeRange} />
+        </>
+      )}
+
+      {showCharts ? (
+        <Box sx={{ py: 3 }}>
+          <LineChart
+            title="预算消耗率走势"
+            timeScale={timeScale}
+            setTimeScale={setTimeScale}
+            series={getBudgetConsumptionSeries()}
+            yAxisName="消耗率(%)"
+            loading={!timeSeries}
+            width="800px"
+            height="350px"
+          />
+        </Box>
+      ) : null}
+
+      <Divider />
+
       <Paragraph>投放单元：</Paragraph>
-      <Stack>
+      <Stack sx={{ minWidth: 320 }}>
         {units.map((unit, i) => (
           <UnitPreview
             key={unit.name}
@@ -174,8 +279,20 @@ export function AdCampaignDetail({
           />
         ))}
       </Stack>
-      <Paragraph>投放时间范围：{timeRange ? '' : '未设置分时投放'}</Paragraph>
-      {timeRange && <SelectableTimeTable timeRange={timeRange} />}
+
+      {showCharts ? (
+        <Box sx={{ pt: 3 }}>
+          <PieChart
+            title="投放单元曝光量分布"
+            timeScale={timeScale}
+            setTimeScale={setTimeScale}
+            data={getUnitImpressionsPieData()}
+            loading={!timeSeries}
+            width="800px"
+            height="320px"
+          />
+        </Box>
+      ) : null}
     </Stack>
   );
 }

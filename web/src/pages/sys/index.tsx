@@ -1,24 +1,19 @@
 import type { RouteObject } from 'react-router-dom';
 import { SysDashboardLayout } from './layout';
-import { privateApi } from '@/utils/axios';
-import type { Organization_Client } from '@shared/org';
-import { useCustomQuery } from '@/hooks/useCustomQuery';
 import {
   Divider,
-  List,
-  ListItem,
-  ListItemText,
   Paper,
-  Skeleton,
-  Stack,
   Typography,
 } from '@mui/material';
 import GridV2 from '@mui/material/Unstable_Grid2';
-import type { AssetTicket_Client } from '@shared/asset';
-import { useMemo } from 'react';
+import type { TicketState } from '@shared/asset';
 import { sysAssetsRoute } from './assets';
 import { sysCredentialsRoute } from './credentials';
 import { sysCreationsRoute } from './creations';
+import { useBooleanData, useTicketStateData } from '@/hooks/useTimeSeries';
+import { ticketStateColors } from '@/components/ChartComponents';
+import { tCredentialState, tTicketState } from '@/utils/translate';
+import { PieChart } from '@/components/ChartComponents';
 
 export const sysRoute: RouteObject = {
   path: '/sys',
@@ -34,14 +29,20 @@ export const sysRoute: RouteObject = {
 function Page() {
   return (
     <>
-      <Typography variant="h4">首页看板</Typography>
+      <Typography variant="h4">小二管理看板</Typography>
       <Divider sx={{ my: 3 }} />
       <GridV2 container spacing={3}>
         <GridV2 xs={6}>
           <OrgBlock />
         </GridV2>
         <GridV2 xs={6}>
-          <AssetBlock />
+          <CreationsBlock />
+        </GridV2>
+        <GridV2 xs={6}>
+          <CampaignsBlock />
+        </GridV2>
+        <GridV2 xs={6}>
+          <UnitsBlock />
         </GridV2>
       </GridV2>
     </>
@@ -49,100 +50,119 @@ function Page() {
 }
 
 function OrgBlock() {
-  const { data, isLoading, isError } = useCustomQuery(['orgs'], () =>
-    privateApi
-      .get<Organization_Client[]>(`/api/org/list`)
-      .then((res) => res.data)
-  );
-  const stats = useMemo(() => {
-    if (!data) return;
-    const nOrg = data.length;
-    let nPending = 0;
-    let nInProgress = 0;
-    let nApproved = 0;
-    for (const { credential } of data) {
-      if (!credential) continue;
-      if (credential.state == 'pending') nPending++;
-      else if (credential.state == 'in-progress') nInProgress++;
-      else if (credential.state == 'approved') nApproved++;
-    }
-    return { nOrg, nPending, nInProgress, nApproved };
-  }, [data]);
+  const data = useTicketStateData('org');
 
-  return isLoading || isError ? (
-    <Stack spacing={2}>
-      <Skeleton variant="rounded" height={30} />
-      <Skeleton variant="rounded" height={30} />
-    </Stack>
-  ) : (
-    <>
-      <Paper elevation={2} sx={{ p: 2 }}>
-        <Typography variant="h5">机构信息</Typography>
-        <Divider sx={{ my: 1 }} />
-        <List dense>
-          <ListItem>
-            <ListItemText primary={`机构总数：${stats?.nOrg}`} />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary={`资质等待审核：${stats?.nPending}`} />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary={`资质审核中：${stats?.nInProgress}`} />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary={`验证通过：${stats?.nApproved}`} />
-          </ListItem>
-        </List>
-      </Paper>
-    </>
+  const getCredentialsPieData = () => {
+    if (!data) {
+      return [];
+    }
+
+    return data.map(({ state, count }) => ({
+      name: tCredentialState(state),
+      value: count,
+      color: ticketStateColors[state as TicketState],
+    }));
+  };
+
+  return (
+    <Paper elevation={2} sx={{ p: 2 }}>
+      <PieChart
+        title="机构资质审核情况"
+        data={getCredentialsPieData()}
+        loading={!data}
+        height="320px"
+        layout="top"
+      />
+    </Paper>
   );
 }
 
-function AssetBlock() {
-  const { data, isLoading, isError } = useCustomQuery(['assets'], () =>
-    privateApi
-      .get<AssetTicket_Client[]>(`/api/ads/asset/list`)
-      .then((res) => res.data)
-  );
-  const stats = useMemo(() => {
-    if (!data) return;
-    const nAsset = data.length;
-    let nPending = 0;
-    let nInProgress = 0;
-    let nApproved = 0;
-    for (const { state } of data) {
-      if (state == 'pending') nPending++;
-      else if (state == 'in-progress') nInProgress++;
-      else if (state == 'approved') nApproved++;
-    }
-    return { nAsset, nPending, nInProgress, nApproved };
-  }, [data]);
+function CreationsBlock() {
+  const data = useTicketStateData('creations');
 
-  return isLoading || isError ? (
-    <Stack spacing={2}>
-      <Skeleton variant="rounded" height={30} />
-      <Skeleton variant="rounded" height={30} />
-    </Stack>
-  ) : (
-    <>
-      <Paper elevation={2} sx={{ p: 2 }}>
-        <Typography variant="h5">物料信息</Typography>
-        <Divider sx={{ my: 1 }} />
-        <List dense>
-          <ListItem>
-            <ListItemText primary={`物料总数：${stats?.nAsset}`} />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary={`等待审核：${stats?.nPending}`} />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary={`审核中：${stats?.nInProgress}`} />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary={`审核通过：${stats?.nApproved}`} />
-          </ListItem>
-        </List>
-      </Paper>
-    </>
+  const getTicketStatePieData = () => {
+    if (!data) {
+      return [];
+    }
+
+    return data
+      .filter(({ state }) => state !== undefined)
+      .map(({ state, count }) => ({
+        name: tTicketState(state!),
+        value: count,
+        color: ticketStateColors[state as TicketState],
+      }));
+  };
+
+  return (
+    <Paper elevation={2} sx={{ p: 2 }}>
+      <PieChart
+        title="广告创意工单审核情况"
+        data={getTicketStatePieData()}
+        loading={!data}
+        height="320px"
+        layout="top"
+      />
+    </Paper>
+  );
+}
+
+function CampaignsBlock() {
+  const data = useBooleanData('campaigns');
+
+  const getActivePieData = () => {
+    if (!data) {
+      return [];
+    }
+
+    return data.map(({ enabled, count }) => ({
+      name: enabled ? '投放中' : '未投放',
+      value: count,
+      color: enabled
+        ? ticketStateColors['approved']
+        : ticketStateColors['pending'],
+    }));
+  };
+
+  return (
+    <Paper elevation={2} sx={{ p: 2 }}>
+      <PieChart
+        title="投放计划状态"
+        data={getActivePieData()}
+        loading={!data}
+        height="320px"
+        layout="top"
+      />
+    </Paper>
+  );
+}
+
+function UnitsBlock() {
+  const data = useBooleanData('units');
+
+  const getActivePieData = () => {
+    if (!data) {
+      return [];
+    }
+
+    return data.map(({ enabled, count }) => ({
+      name: enabled ? '投放中' : '未投放',
+      value: count,
+      color: enabled
+        ? ticketStateColors['approved']
+        : ticketStateColors['pending'],
+    }));
+  };
+
+  return (
+    <Paper elevation={2} sx={{ p: 2 }}>
+      <PieChart
+        title="投放单元状态"
+        data={getActivePieData()}
+        loading={!data}
+        height="320px"
+        layout="top"
+      />
+    </Paper>
   );
 }

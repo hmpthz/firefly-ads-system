@@ -192,18 +192,18 @@ export const updateCreation: AuthHandler<
       }
     }
 
-    // 如果更新修改了active以外的字段，则停止投放
     if ('active' in data && found.active !== data.active) {
       // 只更新活跃状态
-      found.active = data.active;
-    } else if (
+    }
+    // 如果更新修改了active以外的字段，则停止投放
+    else if (
       Object.keys(data).length > 0 &&
       'active' in data === false &&
       found.active
     ) {
       // 如果更新了其他字段且当前处于活跃状态，则停止投放
-      found.active = false;
       data.active = false;
+      found.state = 'pending';
     }
 
     found.set(data);

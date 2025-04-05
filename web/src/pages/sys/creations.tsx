@@ -20,7 +20,7 @@ import {
   styled,
 } from '@mui/material';
 import { useNavigate, type RouteObject } from 'react-router-dom';
-import { type TicketState, type AssetTicket_Client } from '@shared/asset';
+import { type TicketState } from '@shared/asset';
 import type {
   AdCreationTicket_Client,
   UpdateCreationTicketFormData,

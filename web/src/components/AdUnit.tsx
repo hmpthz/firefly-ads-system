@@ -37,6 +37,18 @@ import {
   features as featureOptions,
 } from '@/assets/demoData';
 import { useStoreSlice } from '@/store';
+import {
+  useUnitCreationsTimeSeries,
+  unitCreationsTimeDataToXML,
+  downloadXML,
+} from '@/hooks/useTimeSeries';
+import {
+  ChartsControl,
+  getColorByIndex,
+  LineChart,
+  PieChart,
+} from './ChartComponents';
+import type { TimeScale } from '@/store/timeSeriesSlice';
 
 export function AdUnitsList() {
   const navigate = useNavigate();
@@ -110,21 +122,96 @@ function ItemRow({
 
 const Paragraph = styled(Typography)(() => ({ fontSize: 18 }));
 
-export function AdUnitDetail({
-  name,
-  createdAt,
-  active,
-  gender,
-  locations,
-  ages,
-  features,
-  expectedImpressions,
-  creations,
-}: AdUnit_Client) {
+export function AdUnitDetail(data: AdUnit_Client) {
+  const {
+    name,
+    createdAt,
+    active,
+    gender,
+    locations,
+    ages,
+    features,
+    expectedImpressions,
+    creations,
+  } = data;
   const navigate = useNavigate();
 
+  // 添加时间尺度选择状态
+  const [timeScale, setTimeScale] = useState<TimeScale>('daily');
+  // 添加图表显示控制
+  const [showCharts, setShowCharts] = useState<boolean>(true);
+
+  // 获取时间序列数据
+  const timeSeries = useUnitCreationsTimeSeries(data, timeScale);
+
+  // 准备完成率折线图数据
+  const getCompletionRateSeries = () => {
+    if (!timeSeries || !timeSeries.unit) {
+      return [];
+    }
+
+    return [
+      {
+        name: '曝光完成率',
+        data: timeSeries.unit.map((item) => ({
+          time: item.time,
+          value: item.completionRate,
+        })),
+        color: '#4caf50',
+      },
+    ];
+  };
+
+  // 准备创意曝光量饼图数据
+  const getCreationImpressionsPieData = () => {
+    if (!timeSeries || !timeSeries.creations) {
+      return [];
+    }
+
+    return timeSeries.creations.map((creationData, index) => {
+      if (!creationData || creationData.length === 0) {
+        return {
+          name: creations[index]?.name || `创意 ${index + 1}`,
+          value: 0,
+        };
+      }
+
+      // 使用第一个时间点的数据
+      return {
+        name: creations[index]?.name || `创意 ${index + 1}`,
+        value: creationData[0]?.impressions || 0,
+        color: getColorByIndex(index),
+      };
+    });
+  };
+
+  // 处理XML数据下载
+  const handleDownloadXML = () => {
+    if (!timeSeries) return;
+
+    const creationNames = creations.map((creation) => creation.name);
+    const xmlContent = unitCreationsTimeDataToXML(
+      name,
+      timeSeries.unit,
+      timeSeries.creations,
+      creationNames
+    );
+
+    const fileName = `unit_${name}_${timeScale}_${new Date()
+      .toISOString()
+      .slice(0, 10)}.xml`;
+    downloadXML(xmlContent, fileName);
+  };
+
   return (
-    <Stack spacing={2} sx={{ width: 1, maxWidth: 520, mb: 4 }}>
+    <Stack spacing={3} sx={{ width: 1, maxWidth: 520, mb: 4 }}>
+      <ChartsControl
+        show={showCharts}
+        setShow={setShowCharts}
+        onDownload={handleDownloadXML}
+        loading={!timeSeries}
+      />
+
       <Paragraph>单元名称：{name}</Paragraph>
       <Paragraph>创建时间：{createdAt}</Paragraph>
       <Paragraph>投放状态：{active ? '已开始投放' : '未开始投放'}</Paragraph>
@@ -133,6 +220,7 @@ export function AdUnitDetail({
         年龄范围：{ages.from} - {ages.to}
       </Paragraph>
       <Paragraph>预期曝光量：{expectedImpressions?.toLocaleString()}</Paragraph>
+
       <Paragraph>地域范围：</Paragraph>
       <Box
         sx={{
@@ -157,6 +245,7 @@ export function AdUnitDetail({
           </Typography>
         ))}
       </Box>
+
       <Paragraph>人群特征：</Paragraph>
       <Box
         sx={{
@@ -181,6 +270,24 @@ export function AdUnitDetail({
           </Typography>
         ))}
       </Box>
+
+      {showCharts ? (
+        <Box sx={{ py: 3 }}>
+          <LineChart
+            title="曝光完成率走势"
+            timeScale={timeScale}
+            setTimeScale={setTimeScale}
+            series={getCompletionRateSeries()}
+            yAxisName="完成率(%)"
+            loading={!timeSeries}
+            width="800px"
+            height="350px"
+          />
+        </Box>
+      ) : null}
+
+      <Divider />
+
       <Paragraph>广告创意：</Paragraph>
       <Stack spacing={2}>
         {creations.map((creation) => (
@@ -191,6 +298,20 @@ export function AdUnitDetail({
           />
         ))}
       </Stack>
+
+      {showCharts ? (
+        <Box sx={{ pt: 3 }}>
+          <PieChart
+            title="广告创意曝光量分布"
+            timeScale={timeScale}
+            setTimeScale={setTimeScale}
+            data={getCreationImpressionsPieData()}
+            loading={!timeSeries}
+            width="800px"
+            height="320px"
+          />
+        </Box>
+      ) : null}
     </Stack>
   );
 }

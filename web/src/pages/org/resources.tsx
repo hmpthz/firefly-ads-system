@@ -11,7 +11,6 @@ import AddIcon from '@mui/icons-material/Add';
 import { useState } from 'react';
 import {
   useNavigate,
-  useParams,
   useSearchParams,
   type RouteObject,
 } from 'react-router-dom';

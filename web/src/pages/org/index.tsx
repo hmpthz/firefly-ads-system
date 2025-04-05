@@ -22,7 +22,6 @@ import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import CancelOutlined from '@mui/icons-material/CancelOutlined';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { tCredentialState } from '@/utils/translate';
-import type { AssetTicket_Client } from '@shared/asset';
 import { orgDetailRoute } from './credentials';
 import { credentialCreateRoute } from './credential-create';
 import { assetCreateRoute } from './asset-create';
@@ -33,6 +32,15 @@ import { unitDetailRoute } from './unit-detail';
 import { campaignCreateRoute } from './campaign-create';
 import { campaignDetailRoute } from './campaign-detail';
 import { resourcesRoute } from './resources';
+import { useMemo, useState } from 'react';
+import type { AdCampaign_Client, AdUnit_Client } from '@shared/campaign';
+import type { TimeScale } from '@/store/timeSeriesSlice';
+import {
+  useCampaignTimeSeries,
+  useUnitTimeSeries,
+} from '@/hooks/useTimeSeries';
+import { LineChart } from '@/components/ChartComponents';
+
 export const orgRoute: RouteObject = {
   path: '/org',
   id: 'org-index',
@@ -88,7 +96,10 @@ function Dashboard({
           <CredentialBlock {...orgData} />
         </GridV2>
         <GridV2 xs={6}>
-          <StatsBlock />
+          <BudgetsBlock />
+        </GridV2>
+        <GridV2 xs={6}>
+          <ImpressionsBlock />
         </GridV2>
       </GridV2>
     </>
@@ -159,57 +170,109 @@ function CredentialBlock({ credential }: Organization_Client) {
   );
 }
 
-function StatsBlock() {
+function BudgetsBlock() {
   const orgId = useStoreSlice('user').profile!.orgId!;
-  const { data: assets, isLoading: isAssetsLoading } = useCustomQuery(
-    ['assets', orgId],
-    () =>
-      privateApi
-        .get<AssetTicket_Client[]>(`/api/ads/asset/list?orgId=${orgId}`)
-        .then((res) => res.data)
-  );
-  const { data: creations, isLoading: isCreationsLoading } = useCustomQuery(
-    ['creations', orgId],
-    () =>
-      privateApi
-        .get<AssetTicket_Client[]>(`/api/ads/creation/list?orgId=${orgId}`)
-        .then((res) => res.data)
-  );
-  const { data: campaigns, isLoading: isCampaignsLoading } = useCustomQuery(
-    ['campaigns', orgId],
-    () =>
-      privateApi
-        .get<AssetTicket_Client[]>(`/api/ads/campaign/list?orgId=${orgId}`)
-        .then((res) => res.data)
+  const { data: campaigns } = useCustomQuery(['campaigns', orgId], () =>
+    privateApi
+      .get<AdCampaign_Client[]>(`/api/ads/campaign/list?orgId=${orgId}`)
+      .then((res) => res.data)
   );
 
+  const campaignAll = useMemo(() => {
+    if (!campaigns) return undefined;
+    const all = { _id: orgId, budget: 0 } as AdCampaign_Client;
+    for (const campaign of campaigns) {
+      all.budget += campaign.budget;
+    }
+    return all;
+  }, [campaigns]);
+
+  const [timeScale, setTimeScale] = useState<TimeScale>('daily');
+  const timeSeries = useCampaignTimeSeries(campaignAll, timeScale);
+
+  const getBudgetConsumptionSeries = () => {
+    if (!timeSeries) {
+      return [];
+    }
+
+    return [
+      {
+        name: '预算消耗',
+        data: timeSeries.map((item) => ({
+          time: item.time,
+          value: item.budget,
+        })),
+        color: '#1976d2',
+      },
+    ];
+  };
+
   return (
-    <Paper elevation={2} sx={{ p: 2, height: 1 }}>
-      <Typography variant="h5">数据概览</Typography>
-      <Divider sx={{ my: 1 }} />
-      <List dense>
-        <ListItem>
-          {isAssetsLoading ? (
-            <Skeleton variant="rounded" />
-          ) : (
-            <ListItemText primary={`物料总数：${assets?.length}`} />
-          )}
-        </ListItem>
-        <ListItem>
-          {isCreationsLoading ? (
-            <Skeleton variant="rounded" />
-          ) : (
-            <ListItemText primary={`广告创意总数：${creations?.length}`} />
-          )}
-        </ListItem>
-        <ListItem>
-          {isCampaignsLoading ? (
-            <Skeleton variant="rounded" />
-          ) : (
-            <ListItemText primary={`投放计划总数：${campaigns?.length}`} />
-          )}
-        </ListItem>
-      </List>
+    <Paper elevation={2} sx={{}}>
+      <LineChart
+        title="投放计划总预算消耗"
+        timeScale={timeScale}
+        setTimeScale={setTimeScale}
+        series={getBudgetConsumptionSeries()}
+        yAxisName="消耗(RMB)"
+        loading={!timeSeries}
+        // width="800px"
+        height="400px"
+        layout="top"
+      />
+    </Paper>
+  );
+}
+
+function ImpressionsBlock() {
+  const orgId = useStoreSlice('user').profile!.orgId!;
+  const { data: units } = useCustomQuery(['units', orgId], () =>
+    privateApi
+      .get<AdUnit_Client[]>(`/api/ads/unit/list?orgId=${orgId}`)
+      .then((res) => res.data)
+  );
+
+  const unitAll = useMemo(() => {
+    if (!units) return undefined;
+    const all = { _id: orgId, expectedImpressions: 0 } as AdUnit_Client;
+    for (const unit of units) {
+      all.expectedImpressions += unit.expectedImpressions;
+    }
+    return all;
+  }, [units]);
+
+  const [timeScale, setTimeScale] = useState<TimeScale>('daily');
+  const timeSeries = useUnitTimeSeries(unitAll, timeScale);
+
+  const getImpressionsSeries = () => {
+    if (!timeSeries) {
+      return [];
+    }
+
+    return [
+      {
+        name: '曝光量',
+        data: timeSeries.map((item) => ({
+          time: item.time,
+          value: item.impressions,
+        })),
+        color: '#4caf50',
+      },
+    ];
+  };
+
+  return (
+    <Paper elevation={2} sx={{}}>
+      <LineChart
+        title="投放单元总曝光量"
+        timeScale={timeScale}
+        setTimeScale={setTimeScale}
+        series={getImpressionsSeries()}
+        yAxisName="曝光量"
+        loading={!timeSeries}
+        layout="top"
+        height="400px"
+      />
     </Paper>
   );
 }
